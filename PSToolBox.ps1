@@ -2,7 +2,7 @@
 # Run from Powershell: IEX ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/itm8johho/itm8scripts/main/PSToolBox.ps1'))
 # or create a shotcut
 #   Shortcut Name: GIT-PSToolbox
-#   Shortcut: Destination: C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe -noexit -ExecutionPolicy Bypass -command "IEX ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/jholst71/public/main/PSToolBox.ps1'))"
+#   Shortcut: Destination: C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe -noexit -ExecutionPolicy Bypass -command "IEX ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/itm8johho/itm8scripts/main/PSToolBox.ps1'))"
 #   Shortcut: Start in: %Userprofile%\Desktop
 #
 # Set of Powershell scripts, that can be used by Consultants

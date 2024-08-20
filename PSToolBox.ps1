@@ -63,28 +63,30 @@ Function Show-Menu {
   Show-Title $Title;
   Clear-Host;
   Write-Host "`n  ================ $Title ================`n";
-  #Write-Host "  Press '0'  for Start SCOM MaintenanceMode for Local Server (Script).";
-  Write-Host "  Press '1'  for Get LatestReboot for Local Computer/Server.";
-  If ($DomainQueryEnabled -eq $True) {Write-Host "  Press '2'  for Get LatestReboot for Domain Servers."};
-  Write-Host "  Press '3'  for Get LoginLogoff for Local Computer/Server.";
-  If ($DomainQueryEnabled -eq $True) {Write-Host "  Press '4'  for Get LoginLogoff for Domain Servers."};
-  If ($DomainQueryEnabled -eq $True) {Write-Host "  Press '5'  for Get AD Users."};
-  If ($DomainQueryEnabled -eq $True) {Write-Host "  Press '6'  for Get Inactive AD Users / last logon more than eg 90 days."};
-  If ($DomainQueryEnabled -eq $True) {Write-Host "  Press '7'  for Get Inactive AD Computers / last active more than eg 90 days."};
-  If ($DomainQueryEnabled -eq $True) {Write-Host "  Press '8'  for Get AD Servers."};
-  Write-Host "  Press '9'  for Get Password Never Expires for User Accounts.";
+  #Write-Host "  Press  '0'  for Start SCOM MaintenanceMode for Local Server (Script).";
+  Write-Host "  Press  '1'  for Get LatestReboot for Local Computer/Server.";
+  If ($DomainQueryEnabled -eq $True) {Write-Host "  Press  '2'  for Get LatestReboot for Domain Servers."};
+  Write-Host "  Press  '3'  for Get LoginLogoff for Local Computer/Server.";
+  If ($DomainQueryEnabled -eq $True) {Write-Host "  Press  '4'  for Get LoginLogoff for Domain Servers."};
+  If ($DomainQueryEnabled -eq $True) {Write-Host "  Press  '5'  for Get AD Users."};
+  If ($DomainQueryEnabled -eq $True) {Write-Host "  Press  '6'  for Get Inactive AD Users / last logon more than eg 90 days."};
+  If ($DomainQueryEnabled -eq $True) {Write-Host "  Press  '7'  for Get Inactive AD Computers / last active more than eg 90 days."};
+  If ($DomainQueryEnabled -eq $True) {Write-Host "  Press  '8'  for Get AD Servers."};
+  Write-Host "  Press  '9'  for Get Password Never Expires for User Accounts.";
+  If ($DomainQueryEnabled -eq $True) {Write-Host "  Press '10'  for Get ITM8 AD Users."};
+
   Write-Host "  "
-  Write-Host "  Press '11' for Get HotFixInstallDates for Local Computer/Server.";
-  If ($DomainQueryEnabled -eq $True) {Write-Host "  Press '12' for Get HotFixInstallDates for Domain Servers."};
-  Write-Host "  Press '13' for Get Installed HotFixes on Local Computer/Server.";
-  #Write-Host "  Press '14' for Get - on Local Computer/Server.";
-  Write-Host "  Press '15' for Get ExpiredCertificates for Local Server.";
-  If ($DomainQueryEnabled -eq $True) {Write-Host "  Press '16' for Get ExpiredCertificates for Domain Servers."};
+  Write-Host "  Press '21' for Get HotFixInstallDates for Local Computer/Server.";
+  If ($DomainQueryEnabled -eq $True) {Write-Host "  Press '22' for Get HotFixInstallDates for Domain Servers."};
+  Write-Host "  Press '23' for Get Installed HotFixes on Local Computer/Server.";
+  #Write-Host "  Press '24' for Get - on Local Computer/Server.";
+  Write-Host "  Press '25' for Get ExpiredCertificates for Local Server.";
+  If ($DomainQueryEnabled -eq $True) {Write-Host "  Press '26' for Get ExpiredCertificates for Domain Servers."};
   Write-Host "  "
-  Write-Host "  Press '21' for Get FolderPermission for Local Computer/Server.";
-  If ($DomainQueryEnabled -eq $True) {Write-Host "  Press '22' for Get TimeSyncStatus for Domain Servers."};
-  If ($DomainQueryEnabled -eq $True) {Write-Host "  Press '23' for Get DateTimeStatus for Domain Servers."};
-  If ($DomainQueryEnabled -eq $True) {Write-Host "  Press '24' for Get FSLogixErrors for Domain Servers."};
+  Write-Host "  Press '31' for Get FolderPermission for Local Computer/Server.";
+  If ($DomainQueryEnabled -eq $True) {Write-Host "  Press '32' for Get TimeSyncStatus for Domain Servers."};
+  If ($DomainQueryEnabled -eq $True) {Write-Host "  Press '33' for Get DateTimeStatus for Domain Servers."};
+  If ($DomainQueryEnabled -eq $True) {Write-Host "  Press '34' for Get FSLogixErrors for Domain Servers."};
   #Write-Host "  Press '99' for this option.";
   Write-Host "  ";
   Write-Host "   Press 'H'  for Toolbox Help / Information.";
@@ -120,33 +122,37 @@ Function ToolboxMenu {
         If ($DomainQueryEnabled -eq $True) {$Result = Get-ADServers; $Result.ADServers | FT -Autosize;} ELSE {$DomainQueryEnabledInfo}
         Pause;};
       "9" { "`n`n  You selected: Get Password Never Expires for User Accounts`n"
-        $Result = Get-UserPasswordNeverExpires; $Result.UserPasswordNeverExpires | FT -Autosize;
+        If ($DomainQueryEnabled -eq $True) {$Result = Get-UserPasswordNeverExpires; $Result.UserPasswordNeverExpires | FT -Autosize;} ELSE {$DomainQueryEnabledInfo}
         Pause;};
-      "11" { "`n`n  You selected: Get HotFixInstallDates for Local Computer/Server`n"
+      "10" { "`n`n  You selected: Get AD Users`n"
+		If ($DomainQueryEnabled -eq $True) {$Result = Get-ITM8Users; $Result.ITM8Users | FT -Autosize;} ELSE {$DomainQueryEnabledInfo}
+        Pause;};
+
+      "21" { "`n`n  You selected: Get HotFixInstallDates for Local Computer/Server`n"
         $Result = Get-HotFixInstallDatesLocal; $Result.HotFixInstallDates | FT -Autosize;
         Pause; };
-      "12" { "`n`n  You selected: Get HotFixInstallDates for Domain Servers`n"
+      "22" { "`n`n  You selected: Get HotFixInstallDates for Domain Servers`n"
         If ($DomainQueryEnabled -eq $True) {$Result = Get-HotFixInstallDatesDomain; $Result.HotFixInstallDates | FT -Autosize;} ELSE {$DomainQueryEnabledInfo}
         Pause;};
-      "13" { "`n`n  You selected: Get Installed HotFixes on Local Computer/Server`n"
+      "23" { "`n`n  You selected: Get Installed HotFixes on Local Computer/Server`n"
         $Result = Get-HotFixInstalledLocal; $Result.HotFixInstalled | FT -Autosize;
         Pause; };
-      "15" { "`n`n  You selected: Get ExpiredCertificates for Local Server`n"
+      "25" { "`n`n  You selected: Get ExpiredCertificates for Local Server`n"
         $Result = Get-ExpiredCertificatesLocal; $Result.ExpiredCertificates | FT -Autosize;
         Pause;};
-      "16" { "`n`n  You selected: Get ExpiredCertificates for Domain Servers`n"
+      "26" { "`n`n  You selected: Get ExpiredCertificates for Domain Servers`n"
         If ($DomainQueryEnabled -eq $True) {$Result = Get-ExpiredCertificatesDomain; $Result.ExpiredCertificates | FT -Autosize;} ELSE {$DomainQueryEnabledInfo}
         Pause;};
-      "21" { "`n`n  You selected: Get FolderPermission for Local Computer/Server`n"
+      "31" { "`n`n  You selected: Get FolderPermission for Local Computer/Server`n"
         $Result = Get-FolderPermissionLocal; $Result.FolderPermission | FT -Autosize;
         Pause;};
-      "22" { "`n`n  You selected: Get TimeSync Status for Domain Servers`n"
+      "32" { "`n`n  You selected: Get TimeSync Status for Domain Servers`n"
         If ($DomainQueryEnabled -eq $True) {$Result = Get-TimeSyncStatusDomain; $Result.TimeSyncStatus | FT -Autosize;} ELSE {$DomainQueryEnabledInfo}
         Pause;};
-      "23" { "`n`n  You selected: Get DateTimeStatus for Domain Servers`n"
+      "33" { "`n`n  You selected: Get DateTimeStatus for Domain Servers`n"
         If ($DomainQueryEnabled -eq $True) {$Result = Get-DateTimeStatusDomain; $Result.DateTimeStatus | FT -Autosize;} ELSE {$DomainQueryEnabledInfo}
         Pause;};
-      "24" { "`n`n  You selected: Get FSLogixErrors for Domain Servers`n"
+      "34" { "`n`n  You selected: Get FSLogixErrors for Domain Servers`n"
         If ($DomainQueryEnabled -eq $True) {$Result = Get-FSLogixErrorsDomain; $Result.FSLogixErrors | FT -Autosize;} ELSE {$DomainQueryEnabledInfo}
         Pause;};
       "99" { "`n`n  You selected: Test option #99`n"
@@ -288,7 +294,7 @@ Function Get-ADUsers {## Get AD Users
   );
   ## Script
     Show-Title "Get AD Users";
-    $fResult = Get-Aduser -Filter * -Properties *  | Sort-Object -Property samaccountname | Select CN, DisplayName, Samaccountname,@{n="LastLogonDate";e={[datetime]::FromFileTime($_.lastLogonTimestamp)}}, Enabled, PasswordNeverExpires, @{Name='PwdLastSet';Expression={[DateTime]::FromFileTime($_.PwdLastSet)}}, Description;
+    $fResult = Get-Aduser -Filter * -Properties *  | Sort-Object -Property samaccountname | Select CN, DisplayName, Samaccountname,@{n="LastLogonDate";e={[datetime]::FromFileTime($_.lastLogonTimestamp).ToString("yyyy-MM-dd HH:mm:ss")}}, Enabled, PasswordNeverExpires, @{Name='PwdLastSet';Expression={[DateTime]::FromFileTime($_.PwdLastSet).ToString("yyyy-MM-dd HH:mm:ss")}}, Description;
   ## Output
     #$fResult | Sort DisplayName | Select CN,DisplayName,Samaccountname,LastLogonDate,Enabled,PasswordNeverExpires,PwdLastSet,Description;
   ## Exports
@@ -308,7 +314,7 @@ Function Get-InactiveADUsers {## Get inactive AD Users / Latest Logon more than 
   ## Script
     Show-Title "Get AD Users Latest Logon / inactive more than $($fDaysInactive) days";
 	$fDaysInactiveTimestamp = [DateTime]::Now.AddDays(-$($fDaysInactive));
-    $fResult = Get-Aduser -Filter {(LastLogonTimeStamp -lt $fDaysInactiveTimestamp) -or (LastLogonTimeStamp -notlike "*")} -Properties *  | Sort-Object -Property samaccountname | Select CN,DisplayName,Samaccountname,@{n="LastLogonDate";e={[datetime]::FromFileTime($_.lastLogonTimestamp)}},Enabled,PasswordNeverExpires,@{Name='PwdLastSet';Expression={[DateTime]::FromFileTime($_.PwdLastSet)}},Description;
+    $fResult = Get-Aduser -Filter {(LastLogonTimeStamp -lt $fDaysInactiveTimestamp) -or (LastLogonTimeStamp -notlike "*")} -Properties *  | Sort-Object -Property samaccountname | Select CN,DisplayName,Samaccountname,@{n="LastLogonDate";e={[datetime]::FromFileTime($_.lastLogonTimestamp).ToString("yyyy-MM-dd HH:mm:ss")}},Enabled,PasswordNeverExpires,@{Name='PwdLastSet';Expression={[DateTime]::FromFileTime($_.PwdLastSet).ToString("yyyy-MM-dd HH:mm:ss")}},Description;
   ## Output
     #$fResult | Sort DisplayName | Select CN,DisplayName,Samaccountname,LastLogonDate,Enabled,PasswordNeverExpires,PwdLastSet,Description;
   ## Exports
@@ -365,7 +371,7 @@ Function Get-UserPasswordNeverExpires {## Get Password Never Expires for User Ac
   ## Script
     Show-Title "Get Password Never Expires for User Accounts";
     $fDaysInactiveTimestamp = [DateTime]::Now.AddDays(-$($fDaysInactive));
-    $fResult = get-aduser -filter * -properties Name, PasswordNeverExpires, pwdlastSet | where { $_.passwordNeverExpires -eq $true } | Sort Name | Select-Object Name, SamAccountName, @{n="PwdNeverExpires";e={$_.PasswordNeverExpires}}, @{n="PwdLastSet";e={[datetime]::FromFileTime($_."PwdLastSet")}}, Enabled;
+    $fResult = Get-ADUser -Filter * -Properties Name, PasswordNeverExpires, pwdlastSet | where { $_.passwordNeverExpires -eq $true } | Sort Name | Select-Object Name, SamAccountName, @{n="PwdNeverExpires";e={$_.PasswordNeverExpires}}, @{n="PwdLastSet";e={[datetime]::FromFileTime($_."PwdLastSet").ToString("yyyy-MM-dd HH:mm:ss")}}, Enabled;
   ## Output
     #$fResult;
   ## Exports
@@ -375,6 +381,25 @@ Function Get-UserPasswordNeverExpires {## Get Password Never Expires for User Ac
     $Return.UserPasswordNeverExpires = $fResult;
     Return $Return;
 };
+Function Get-ITM8Users {## Get ITM8 AD Users
+  Param(
+    $fCustomerName = $(Get-CustomerName),
+	$fExport = ("Yes" | %{ If($Entry = Read-Host "  Export result to file ( Y/N - Default: $_ )"){$Entry} Else {$_} }),
+    $fFileName = (Get-FileName -fFileNameText "ITM8_Users" -fCustomerName $fCustomerName)
+  );
+  ## Script
+    Show-Title "Get ITM8 AD Users";
+    $fResult = Get-ADUser -Filter * -Properties * | ? {($_.DistinguishedName -Like "*OU=Progressive*") -or ($_.DistinguishedName -Like "*OU=ITM8*") -or ($_.Description -like "*Progressive*") -or ($_.Description -like "*ITM8*")} | Sort Enabled, DisplayName | Select DisplayName, Samaccountname, @{n="LastLogonDate";e={[datetime]::FromFileTime($_.lastLogonTimestamp).ToString("yyyy-MM-dd HH:mm:ss")}}, Enabled, PasswordNeverExpires, @{Name='PwdLastSet';Expression={[DateTime]::FromFileTime($_.PwdLastSet).ToString("yyyy-MM-dd HH:mm:ss")}}, Description, DistinguishedName;
+  ## Output
+    #$fResult | Sort DisplayName | Select CN,DisplayName,Samaccountname,LastLogonDate,Enabled,PasswordNeverExpires,PwdLastSet,Description;
+  ## Exports
+    If (($fExport -eq "Y") -or ($fExport -eq "YES")) { $fResult | Sort Enabled, DisplayName | Select DisplayName, Samaccountname, LastLogonDate, Enabled, PasswordNeverExpires, PwdLastSet, Description, DistinguishedName | Export-CSV "$($fFileName).csv" -Delimiter ';' -Encoding UTF8 -NoTypeInformation; };
+  ## Return
+    [hashtable]$Return = @{};
+    $Return.ITM8Users = $fResult | Sort Enabled, DisplayName | Select DisplayName, Samaccountname, LastLogonDate, Enabled, PasswordNeverExpires, PwdLastSet, Description, DistinguishedName;
+    Return $Return;
+};
+
 Function Get-HotFixInstallDatesLocal { ### Get-HotFixInstallDates for Local Computer/Server
   Param(
     $fHotfixInstallDates = ("3" | %{ If($Entry = Read-Host "  Enter number of Hotfix-install dates per Computer (Default: $_ Install Dates)"){$Entry} Else {$_} }),

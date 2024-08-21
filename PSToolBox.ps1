@@ -113,19 +113,19 @@ Function ToolboxMenu {
 		If ($DomainQueryEnabled -eq $True) {$Result = Get-ADUsers; $Result.ADUsers | FT -Autosize;} ELSE {$DomainQueryEnabledInfo}
         Pause;};
       "6" { "`n`n  You selected: Get Inactive AD Users / last logon more than eg 90 days`n"
-		If ($DomainQueryEnabled -eq $True) {$Result = Get-InactiveADUsers; $Result.InactiveADUsers | FT -Autosize;} ELSE {$DomainQueryEnabledInfo}
+		If ($DomainQueryEnabled -eq $True) {$Result = Get-InactiveADUsers; $Result.count; $Result.InactiveADUsers | FT -Autosize;} ELSE {$DomainQueryEnabledInfo}
         Pause;};
       "7" { "`n`n  You selected: Get Inactive AD Computers / last active more than eg 90 days`n"
-        If ($DomainQueryEnabled -eq $True) {$Result = Get-InactiveADComputers; $Result.InactiveADComputers | FT -Autosize;} ELSE {$DomainQueryEnabledInfo}
+        If ($DomainQueryEnabled -eq $True) {$Result = Get-InactiveADComputers; $Result.count; $Result.InactiveADComputers | FT -Autosize;} ELSE {$DomainQueryEnabledInfo}
         Pause;};
       "8" { "`n`n  You selected: Get AD Servers`n"
         If ($DomainQueryEnabled -eq $True) {$Result = Get-ADServers; $Result.ADServers | FT -Autosize;} ELSE {$DomainQueryEnabledInfo}
         Pause;};
       "9" { "`n`n  You selected: Get Password Never Expires for User Accounts`n"
-        If ($DomainQueryEnabled -eq $True) {$Result = Get-UserPasswordNeverExpires; $Result.UserPasswordNeverExpires | FT -Autosize;} ELSE {$DomainQueryEnabledInfo}
+        If ($DomainQueryEnabled -eq $True) {$Result = Get-UserPasswordNeverExpires; $Result.count; $Result.UserPasswordNeverExpires | FT -Autosize;} ELSE {$DomainQueryEnabledInfo}
         Pause;};
       "10" { "`n`n  You selected: Get AD Users`n"
-		If ($DomainQueryEnabled -eq $True) {$Result = Get-ITM8Users; $Result.ITM8Users | FT -Autosize;} ELSE {$DomainQueryEnabledInfo}
+		If ($DomainQueryEnabled -eq $True) {$Result = Get-ITM8Users; $Result.count; $Result.ITM8Users | FT -Autosize;} ELSE {$DomainQueryEnabledInfo}
         Pause;};
 
       "21" { "`n`n  You selected: Get HotFixInstallDates for Local Computer/Server`n"

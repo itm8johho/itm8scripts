@@ -389,9 +389,9 @@ Function Get-ITM8Users {## Get ITM8 AD Users
   );
   ## Script
     Show-Title "Get ITM8 AD Users";
-    $fResult = Get-ADUser -Filter * -Properties * | ? {($_.DistinguishedName -Like "*OU=Progressive*") -or ($_.DistinguishedName -Like "*OU=ITM8*") -or ($_.Description -like "*Progressive*") -or ($_.Description -like "*ITM8*")} | Sort Enabled, DisplayName | Select DisplayName, Samaccountname, @{n="LastLogonDate";e={[datetime]::FromFileTime($_.lastLogonTimestamp).ToString("yyyy-MM-dd HH:mm:ss")}}, Enabled, PasswordNeverExpires, @{Name='PwdLastSet';Expression={[DateTime]::FromFileTime($_.PwdLastSet).ToString("yyyy-MM-dd HH:mm:ss")}}, Description, DistinguishedName;
+    $fResult = Get-ADUser -Filter * -Properties * | ? {($_.DistinguishedName -Like "*OU=Progressive*") -or ($_.DistinguishedName -Like "*OU=ITM8*") -or ($_.Description -like "*Progressive*") -or ($_.Description -like "*ITM8*") -or ($_.Samaccountname -like "*ProAdmin*") -or ($_.DisplayName -like "*ProAdmin*") -or ($_.Samaccountname -like "*PIT-Support*") -or ($_.DisplayName -like "*PIT-Support*") -or ($_.Samaccountname -like "*DTAdmin*") -or ($_.DisplayName -like "*DTAdmin*")} | Sort Enabled, DisplayName | Select DisplayName, Samaccountname, @{n="LastLogonDate";e={[datetime]::FromFileTime($_.lastLogonTimestamp).ToString("yyyy-MM-dd HH:mm:ss")}}, Enabled, PasswordNeverExpires, @{Name='PwdLastSet';Expression={[DateTime]::FromFileTime($_.PwdLastSet).ToString("yyyy-MM-dd HH:mm:ss")}}, Description, DistinguishedName;
   ## Output
-    #$fResult | Sort DisplayName | Select CN,DisplayName,Samaccountname,LastLogonDate,Enabled,PasswordNeverExpires,PwdLastSet,Description;
+    #$fResult.count; $fResult | Sort Enabled, DisplayName | ft; # | Select CN,DisplayName,Samaccountname,LastLogonDate,Enabled,PasswordNeverExpires,PwdLastSet,Description;
   ## Exports
     If (($fExport -eq "Y") -or ($fExport -eq "YES")) { $fResult | Sort Enabled, DisplayName | Select DisplayName, Samaccountname, LastLogonDate, Enabled, PasswordNeverExpires, PwdLastSet, Description, DistinguishedName | Export-CSV "$($fFileName).csv" -Delimiter ';' -Encoding UTF8 -NoTypeInformation; };
   ## Return

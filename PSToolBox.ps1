@@ -399,7 +399,6 @@ Function Get-ITM8Users {## Get ITM8 AD Users
     $Return.ITM8Users = $fResult | Sort Enabled, DisplayName | Select DisplayName, Samaccountname, LastLogonDate, Enabled, PasswordNeverExpires, PwdLastSet, Description, DistinguishedName;
     Return $Return;
 };
-
 Function Get-HotFixInstallDatesLocal { ### Get-HotFixInstallDates for Local Computer/Server
   Param(
     $fHotfixInstallDates = ("3" | %{ If($Entry = Read-Host "  Enter number of Hotfix-install dates per Computer (Default: $_ Install Dates)"){$Entry} Else {$_} }),
@@ -506,7 +505,7 @@ Function Get-ExpiredCertificatesLocal {## Get-ExpiredCertificates
   ## Script
     Show-Title "Get Certificates expired or expire within next $($fExpiresBeforeDays) days on Local Server";
 	$fExpiresBefore = [DateTime]::Now.AddDays($($fExpiresBeforeDays));
-    $fResult = Get-ChildItem -path "cert:LocalMachine\my" -Recurse | ? {$_.NotAfter -lt "$fExpiresBefore"} | ? {($_.Subject -like $fCertSearch) -or ($_.FriendlyName -like $fCertSearch)} | Select @{Name="Expires";Expression={$_.NotAfter}}, FriendlyName, Subject, @{Name="ParentPath";Expression={$_.PSParentPath.Replace("Microsoft.PowerShell.Security\Certificate::","")}}, Issuer, Thumbprint;
+    $fResult = Get-ChildItem -path "cert:LocalMachine\my" -Recurse | ? {$_.NotAfter -lt "$fExpiresBefore"} | ? {($_.Subject -like $fCertSearch) -or ($_.FriendlyName -like $fCertSearch)} | Select @{Name="Expires";Expression={($_.NotAfter).ToString("yyyy-MM-dd HH:mm:ss")}}, FriendlyName, Subject, @{Name="ParentPath";Expression={$_.PSParentPath.Replace("Microsoft.PowerShell.Security\Certificate::","")}}, Issuer, Thumbprint;
 	  ## Output
     #$fResult | Sort Expires, FriendlyName | Select Expires, FriendlyName, Subject, ParentPath, Issuer, Thumbprint | FT -autosize;
   ## Exports
@@ -532,7 +531,7 @@ Function Get-ExpiredCertificatesDomain {## Get-Expired_Certificates
     $fResult = Foreach ($fQueryComputer in $fQueryComputers.name) { # Get $fQueryComputers-Values like .Name, .DNSHostName, or add them to variables in the scriptblocks/functions
       Write-Host "Querying Server: $($fQueryComputer)";
       $fBlock01 = {Get-ChildItem -path "cert:LocalMachine\my" -Recurse | ? {$_.NotAfter -lt "$Using:fExpiresBefore"} | ? {($_.Subject -like $Using:fCertSearch) -or ($_.FriendlyName -like $Using:fCertSearch)} | Select @{Name="Expires";Expression={$_.NotAfter}}, FriendlyName, Subject, @{Name="ParentPath";Expression={$_.PSParentPath.Replace("Microsoft.PowerShell.Security\Certificate::","")}}, Issuer, Thumbprint;};
-      $fLocalBlock01 = {Get-ChildItem -path "cert:LocalMachine\my" -Recurse | ? {$_.NotAfter -lt "$fExpiresBefore"} | ? {($_.Subject -like $fCertSearch) -or ($_.FriendlyName -like $fCertSearch)} | Select @{Name="Expires";Expression={$_.NotAfter}}, FriendlyName, Subject, @{Name="ParentPath";Expression={$_.PSParentPath.Replace("Microsoft.PowerShell.Security\Certificate::","")}}, Issuer, Thumbprint;};
+      $fLocalBlock01 = {Get-ChildItem -path "cert:LocalMachine\my" -Recurse | ? {$_.NotAfter -lt "$fExpiresBefore"} | ? {($_.Subject -like $fCertSearch) -or ($_.FriendlyName -like $fCertSearch)} | Select @{Name="Expires";Expression={($_.NotAfter).ToString("yyyy-MM-dd HH:mm:ss")}}, FriendlyName, Subject, @{Name="ParentPath";Expression={$_.PSParentPath.Replace("Microsoft.PowerShell.Security\Certificate::","")}}, Issuer, Thumbprint;};
       IF ($fQueryComputer -eq $Env:COMPUTERNAME) {
         $fLocalHostResult = Invoke-Command -scriptblock $fLocalBlock01;
       } ELSE {

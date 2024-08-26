@@ -21,7 +21,8 @@ Function Get-LogStartTime {
     $fLastXHours = ( %{If ( $fLastXDays -gt 0) {0} Else {"$($DefaultHours)" | %{ If($Entry = Read-Host "  Enter number of hours in searchscope (Default: $_ Hours)"){$Entry} Else {$_} } } })
 	);
   ## Script
-    Return [DateTime]::Now.AddDays(-$($fLastXDays)).AddHours(-$($fLastXHours));
+    # OLD Return [DateTime]::Now.AddDays(-$($fLastXDays)).AddHours(-$($fLastXHours));
+    Return $(If ( $fLastXDays -gt 0) {$((Get-Date "0:00").adddays(-$($fLastXDays)))} Else {$((Get-Date).AddHours(-$($fLastXHours)))});
 };
 Function Get-QueryComputers {  ### Get-QueryComputers - Get Domain Servers names
    # Add this line to Params: $fQueryComputers = $(Get-QueryComputers -DefaultComputerSearch "*" -DefaultComputerExcludeList ""), # Enter SearchName(s) / ServerName(s), separated by comma

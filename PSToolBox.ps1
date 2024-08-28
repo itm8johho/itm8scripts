@@ -17,12 +17,12 @@ Function Get-CustomerName { ("$($Env:USERDOMAIN)" | %{ If($Entry = Read-Host "  
 Function Get-LogStartTime {
   # Add this line to Params: $fEventLogStartTime = (Get-LogStartTime -DefaultDays "7" -DefaultHours "12"),
   Param( $DefaultDays, $DefaultHours,
-	$fLastXDays = ("$($DefaultDays)" | %{ If($Entry = Read-Host "  Enter number of days in searchscope (Default: $_ Days)"){$Entry} Else {$_} }),
-    $fLastXHours = ( %{If ( $fLastXDays -gt 0) {0} Else {"$($DefaultHours)" | %{ If($Entry = Read-Host "  Enter number of hours in searchscope (Default: $_ Hours)"){$Entry} Else {$_} } } })
-	);
+    $fLastXDays = ("$($DefaultDays)" | %{ If($Entry = Read-Host "  Enter number of days in searchscope (Default: $_ Days)"){$Entry} Else {$_} }),
+    $fLastXHours = (%{If ( $fLastXDays -gt 0) {0} Else {"$($DefaultHours)" | %{ If($Entry = Read-Host "  Enter number of hours in searchscope (Default: $_ Hours)"){$Entry} Else {$_} } } })
+  );
   ## Script
-    # OLD Return [DateTime]::Now.AddDays(-$($fLastXDays)).AddHours(-$($fLastXHours));
-    Return $(If ( $fLastXDays -gt 0) {$((Get-Date "0:00").adddays(-$($fLastXDays)))} Else {$((Get-Date).AddHours(-$($fLastXHours)))});
+    $LogStartTime = If ($fLastXDays -gt 0) {$((Get-Date "0:00").adddays(-$($fLastXDays)))} Else {$((Get-Date).AddHours(-$($fLastXHours)).AddMinutes(-(Get-Date).Minute).AddSeconds(-(Get-Date).Second))};
+    Return $LogStartTime; # OLD Return [DateTime]::Now.AddDays(-$($fLastXDays)).AddHours(-$($fLastXHours));
 };
 Function Get-QueryComputers {  ### Get-QueryComputers - Get Domain Servers names
    # Add this line to Params: $fQueryComputers = $(Get-QueryComputers -DefaultComputerSearch "*" -DefaultComputerExcludeList ""), # Enter SearchName(s) / ServerName(s), separated by comma

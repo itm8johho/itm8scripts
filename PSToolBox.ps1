@@ -25,15 +25,15 @@ Function Get-LogStartTime {
     Return $LogStartTime; # OLD Return [DateTime]::Now.AddDays(-$($fLastXDays)).AddHours(-$($fLastXHours));
 };
 Function Get-QueryComputers {  ### Get-QueryComputers - Get Domain Servers names
-   # Add this line to Params: $fQueryComputers = $(Get-QueryComputers -DefaultComputerSearch "*" -DefaultComputerExcludeList ""), # Enter SearchName(s) / ServerName(s), separated by comma
-   Param( $DefaultComputerSearch = "*", $DefaultComputerExcludeList = "",
-     $fQueryComputerSearch = ("$($DefaultComputerSearch)" | %{ If($Entry = @(((Read-Host "  Enter SearchName(s), separated by comma ( Default: $_ )").Split(",")).Trim())){$Entry} Else {((($_).Split(",")).Trim())} }),
-     $fQueryComputerExcludeList = ("$($DefaultComputerExcludeList)" | %{ If($Entry = @(((Read-Host "  Enter Exclusion ServerName(s), separated by comma ( Default: $_ )").Split(",")).Trim())){$Entry} Else {((($_).Split(",")).Trim())} })
-   );
-   ## Script
-     $fQueryComputers = Foreach ($fComputerSearch in $fQueryComputerSearch) {(Get-ADComputer -Filter 'operatingsystem -like "*server*" -and enabled -eq "true"' -Properties * | where { $fQueryComputerExcludeList -notcontains $_.name} -ErrorAction Continue | where { ($_.name -like $fComputerSearch)} -ErrorAction Continue)};
-     $fQueryComputers = $fQueryComputers | Sort Name;
-     Return $fQueryComputers;
+  # Add this line to Params: $fQueryComputers = $(Get-QueryComputers -DefaultComputerSearch "*" -DefaultComputerExcludeList ""), # Enter SearchName(s) / ServerName(s), separated by comma
+  Param( $DefaultComputerSearch = "*", $DefaultComputerExcludeList = "",
+    $fQueryComputerSearch = ("$($DefaultComputerSearch)" | %{ If($Entry = @(((Read-Host "  Enter SearchName(s), separated by comma ( Default: $_ )").Split(",")).Trim())){$Entry} Else {((($_).Split(",")).Trim())} }),
+    $fQueryComputerExcludeList = ("$($DefaultComputerExcludeList)" | %{ If($Entry = @(((Read-Host "  Enter Exclusion ServerName(s), separated by comma ( Default: $_ )").Split(",")).Trim())){$Entry} Else {((($_).Split(",")).Trim())} })
+  );
+  ## Script
+    $fQueryComputers = Foreach ($fComputerSearch in $fQueryComputerSearch) {(Get-ADComputer -Filter 'operatingsystem -like "*server*" -and enabled -eq "true"' -Properties * | where { $fQueryComputerExcludeList -notcontains $_.name} -ErrorAction Continue | where { ($_.name -like $fComputerSearch)} -ErrorAction Continue)};
+    $fQueryComputers = $fQueryComputers | Sort Name;
+    Return $fQueryComputers;
  };
 Function Get-Filename { Param ( $fFileNameText, $fCustomerName ); ##
   # Add this line to Params: $fFileName = (Get-FileName -fFileNameText "<FILENAMETEXT>" -fCustomerName $fCustomerName)
@@ -42,13 +42,13 @@ Function Get-Filename { Param ( $fFileNameText, $fCustomerName ); ##
   #Return "$($env:USERPROFILE)\Desktop\$($fFileNameBase)";
 };
 Function Show-Title {
-  param ( [string]$Title );
+  Param ( [string]$Title );
     $host.UI.RawUI.WindowTitle = $Title;
 };
 Function Show-JobStatus { Param ($fJobNamePrefix)
-    DO { IF ((Get-Job -Name "$($fJobNamePrefix)*").count -ge 1) {$fStatus = ((Get-Job -State Completed).count/(Get-Job -Name "$($fJobNamePrefix)*").count) * 100;
-      Write-Progress -Activity "Waiting for $((Get-Job -State Running).count) of $((Get-Job -Name "$($fJobNamePrefix)*").count) job(s) to complete..." -Status "$($fStatus) % completed" -PercentComplete $fStatus; }; }
-    While ((Get-job -Name "$($fJobNamePrefix)*" | Where State -eq Running));
+  DO { IF ((Get-Job -Name "$($fJobNamePrefix)*").count -ge 1) {$fStatus = ((Get-Job -State Completed).count/(Get-Job -Name "$($fJobNamePrefix)*").count) * 100;
+    Write-Progress -Activity "Waiting for $((Get-Job -State Running).count) of $((Get-Job -Name "$($fJobNamePrefix)*").count) job(s) to complete..." -Status "$($fStatus) % completed" -PercentComplete $fStatus; }; }
+  While ((Get-job -Name "$($fJobNamePrefix)*" | Where State -eq Running));
 };
 #
 ## Menu Functions
@@ -276,7 +276,7 @@ Function Get-LoginLogoffDomain { ## Get-LoginLogoffDomain (Remote) from Event Lo
     Show-Title "Get latest Login / Logoff  for multiple Domain Servers - Events After: $($fEventLogStartTime)";
     $fResult = foreach ($fComputer in $fQueryComputers.name) { # Get Values like .Name, .DNSHostName
       Write-Host "Querying Computer: $($fComputer)"
-      Get-EventLog System -Source Microsoft-Windows-Winlogon -ComputerName $fComputer -after $fEventLogStartTime | select $fUserProperty,$fTypeProperty,$fTimeProperty,$fMachineNameProperty;
+      Get-EventLog System -Source Microsoft-Windows-Winlogon -ComputerName $fComputer -after $fEventLogStartTime | Select $fUserProperty,$fTypeProperty,$fTimeProperty,$fMachineNameProperty;
     };
   ## Output
     #$fResult | sort User, Time | FT -autosize;
@@ -506,7 +506,7 @@ Function Get-ExpiredCertificatesLocal {## Get-ExpiredCertificates
   ## Script
     Show-Title "Get Certificates expired or expire within next $($fExpiresBeforeDays) days on Local Server";
 	$fExpiresBefore = [DateTime]::Now.AddDays($($fExpiresBeforeDays));
-    $fResult = Get-ChildItem -path "cert:LocalMachine\my" -Recurse | ? {$_.NotAfter -lt "$fExpiresBefore"} | ? {($_.Subject -like $fCertSearch) -or ($_.FriendlyName -like $fCertSearch)} | Select @{Name="Expires";Expression={($_.NotAfter).ToString("yyyy-MM-dd HH:mm:ss")}}, FriendlyName, Subject, @{Name="ParentPath";Expression={$_.PSParentPath.Replace("Microsoft.PowerShell.Security\Certificate::","")}}, Issuer, Thumbprint;
+    $fResult = Get-ChildItem -path "cert:LocalMachine\my" -Recurse | ? {$_.NotAfter -lt "$fExpiresBefore"} | ? {($_.Subject -like $fCertSearch) -or ($_.FriendlyName -like $fCertSearch)} | Select @{Name="ServerName";Expression={$env:COMPUTERNAME}}, @{Name="Expires";Expression={($_.NotAfter).ToString("yyyy-MM-dd HH:mm:ss")}}, FriendlyName, Subject, @{Name="ParentPath";Expression={$_.PSParentPath.Replace("Microsoft.PowerShell.Security\Certificate::","")}}, Issuer, Thumbprint;
 	  ## Output
     #$fResult | Sort Expires, FriendlyName | Select Expires, FriendlyName, Subject, ParentPath, Issuer, Thumbprint | FT -autosize;
   ## Exports

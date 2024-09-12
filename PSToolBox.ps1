@@ -510,13 +510,12 @@ Function Get-ExpiredCertificatesLocal {## Get-ExpiredCertificates
 	  ## Output
     #$fResult | Sort Expires, FriendlyName | Select Expires, FriendlyName, Subject, ParentPath, Issuer, Thumbprint | FT -autosize;
   ## Exports
-    If (($fExport -eq "Y") -or ($fExport -eq "YES")) { $fResult |  sort Expires, FriendlyName | Select Expires, FriendlyName, Subject, ParentPath, Issuer, Thumbprint | Export-CSV "$($fFileName).csv" -Delimiter ';' -Encoding UTF8 -NoTypeInformation; };
+    If (($fExport -eq "Y") -or ($fExport -eq "YES")) { $fResult |  sort Expires, FriendlyName | Select ServerName, Expires, FriendlyName, Subject, ParentPath, Issuer, Thumbprint | Export-CSV "$($fFileName).csv" -Delimiter ';' -Encoding UTF8 -NoTypeInformation; };
   ## Return
     [hashtable]$Return = @{};
-    $Return.ExpiredCertificates = $fResult | Sort Expires, FriendlyName | Select Expires, FriendlyName, Subject, ParentPath, Issuer, Thumbprint;
+    $Return.ExpiredCertificates = $fResult | Sort ServerName, Expires, FriendlyName | Select ServerName, Expires, FriendlyName, Subject, ParentPath, Issuer, Thumbprint;
     Return $Return;
-};
-Function Get-ExpiredCertificatesDomain {## Get-Expired_Certificates
+};Function Get-ExpiredCertificatesDomain {## Get-Expired_Certificates
   Param(
     $fCustomerName = $(Get-CustomerName),
     $fCertSearch = ("*" | %{ If($Entry = @(((Read-Host "  Enter Certificate SearchName(s), separated by comma ( Default: $_ )").Split(",")).Trim())){$Entry} Else {$_} }),

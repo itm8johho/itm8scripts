@@ -35,11 +35,12 @@ Function Get-QueryComputers {  ### Get-QueryComputers - Get Domain Servers names
     $fQueryComputers = $fQueryComputers | Sort Name;
     Return $fQueryComputers;
  };
-Function Get-Filename { Param ( $fFileNameText, $fCustomerName ); ##
-  # Add this line to Params: $fFileName = (Get-FileName -fFileNameText "<FILENAMETEXT>" -fCustomerName $fCustomerName)
+Function Export-CSVData { Param ( $fFileNameText, $fCustomerName, $fExportData ); ##
+  # Add this line: Export-CSVData -fFileNameText "$($fFileNameText)" -fCustomerName $fCustomerName -fExportData $(<EXPORTDATA>)
   $fFileNameBase = "$($fCustomerName)$(($fFileNameText).Split([IO.Path]::GetInvalidFileNameChars()) -join '_')_($(get-date -f "yyyy-MM-dd_HH.mm"))";
-  Return "$([Environment]::GetFolderPath("Desktop"))\$($fFileNameBase)";
-  #Return "$($env:USERPROFILE)\Desktop\$($fFileNameBase)";
+  $fFileName = "$([Environment]::GetFolderPath("Desktop"))\$($fFileNameBase)";
+  #$fFileName = "$($env:USERPROFILE)\Desktop\$($fFileNameBase)";
+  $fExportData | Export-CSV "$($fFileName).csv" -Delimiter ';' -Encoding UTF8 -NoTypeInformation;
 };
 Function Show-Title {
   Param ( [string]$Title );
@@ -145,7 +146,7 @@ Function ToolboxMenu {
         If ($DomainQueryEnabled -eq $True) {$Result = Get-ExpiredCertificatesDomain; $Result.ExpiredCertificates | FT -Autosize;} ELSE {$DomainQueryEnabledInfo}
         Pause;};
       "31" { "`n`n  You selected: Get FolderPermission for Local Computer/Server`n"
-        $Result = Get-FolderPermissionLocal; $Result.FolderPermission | FT -Autosize;
+		$Result = Get-FolderPermissionLocal; $Result.FolderPermission | FT -Autosize; $Result.FolderPermission_Level_01_02 | FT -Autosize;
         Pause;};
       "32" { "`n`n  You selected: Get TimeSync Status for Domain Servers`n"
         If ($DomainQueryEnabled -eq $True) {$Result = Get-TimeSyncStatusDomain; $Result.TimeSyncStatus | FT -Autosize;} ELSE {$DomainQueryEnabledInfo}
@@ -174,7 +175,7 @@ Function Get-LatestRebootLocal { ### Get-LatestReboot - Get Latest Reboot / Rest
   Param(
     $fExport = ("Yes" | %{ If($Entry = Read-Host "  Export result to file ( Y/N - Default: $_ )"){$Entry} Else {$_} }),
 	$fEventLogStartTime = (Get-LogStartTime -DefaultDays "7" -DefaultHours "12"),
-    $fFileName = (Get-FileName -fFileNameText "Get-LatestReboot_$($ENV:Computername)" -fCustomerName $fCustomerName)	
+    $fFileNameText = "Get-LatestReboot_$($ENV:Computername)"
   );
   ## Script
     Show-Title "Get latest Shutdown / Restart / Reboot for Local Server - Events After: $($fEventLogStartTime)";
@@ -184,7 +185,7 @@ Function Get-LatestRebootLocal { ### Get-LatestReboot - Get Latest Reboot / Rest
   ## Output
     # $fResult | Select MachineName, TimeGenerated, UserName, Message | fl; $fResult | Select MachineName, TimeGenerated, UserName | ft -Autosize; $fLatestBootTime;
   ## Exports
-    IF (($fExport -eq "Y") -or ($fExport -eq "YES")) {$fResult | sort MachineName, TimeGenerated | Select MachineName, TimeGenerated, UserName, Message | Export-CSV "$($fFileName).csv" -Delimiter ';' -Encoding UTF8 -NoTypeInformation;};
+    If (($fExport -eq "Y") -or ($fExport -eq "YES")) { Export-CSVData -fFileNameText "$($fFileNameText)" -fCustomerName $fCustomerName -fExportData $($fResult | sort MachineName, TimeGenerated | Select MachineName, TimeGenerated, UserName, Message) };
   ## Return
     [hashtable]$Return = @{};
     $Return.LatestBootEventsExtended = $fResult | Select MachineName, TimeGenerated, UserName, Message;
@@ -201,7 +202,7 @@ Function Get-LatestRebootDomain { ### Get-LatestReboot - Get Latest Reboot / Res
     $fExport = "Yes",
     $fExportExtended = ("Yes" | %{ If($Entry = Read-Host "  Export Standard & Extended(message included) result to file - ( Y/N - Default: $_ )"){$Entry} Else {$_} }),
     $fJobNamePrefix = "LatestReboot_",
-    $fFileName = (Get-FileName -fFileNameText "Servers_Get-LatestReboot" -fCustomerName $fCustomerName)
+    $fFileNameText = "Servers_Get-LatestReboot"
   );
   ## Script
     Show-Title "Get latest Shutdown / Restart / Reboot for multiple Domain Servers - Events After: $($fEventLogStartTime)";
@@ -228,8 +229,8 @@ Function Get-LatestRebootDomain { ### Get-LatestReboot - Get Latest Reboot / Res
   ## Output
     #$fResult | sort MachineName, TimeGenerated | Select MachineName, TimeGenerated, UserName | FT -autosize;
   ## Exports
-    If (($fExport -eq "Y") -or ($fExport -eq "YES")) { $fResult | sort MachineName, TimeGenerated | Select MachineName, TimeGenerated, UserName | Export-CSV "$($fFileName).csv" -Delimiter ';' -Encoding UTF8 -NoTypeInformation; };
-    If (($fExportExtended -eq "Y") -or ($fExportExtended -eq "YES")) { $fResult | sort MachineName, TimeGenerated | Select MachineName, TimeGenerated, UserName, Message | Export-CSV "$($fFileName)_Extended.csv" -Delimiter ';' -Encoding UTF8 -NoTypeInformation; };
+    If (($fExport -eq "Y") -or ($fExport -eq "YES")) { Export-CSVData -fFileNameText "$($fFileNameText)" -fCustomerName $fCustomerName -fExportData $($fResult | sort MachineName, TimeGenerated | Select MachineName, TimeGenerated, UserName) };
+    If (($fExportExtended -eq "Y") -or ($fExportExtended -eq "YES")) { Export-CSVData -fFileNameText "$($fFileNameText)_Extended" -fCustomerName $fCustomerName -fExportData $($fResult | sort MachineName, TimeGenerated | Select MachineName, TimeGenerated, UserName, Message) };
   ## Return
     [hashtable]$Return = @{};
     $Return.LatestBootEvents = $fResult | sort MachineName, TimeGenerated | Select MachineName, TimeGenerated, UserName;
@@ -239,7 +240,7 @@ Function Get-LoginLogoffLocal { ## Get-LoginLogoff from Logged On for Local Comp
   Param(
     $fEventLogStartTime = $(Get-LogStartTime -DefaultDays "7" -DefaultHours "12"),
     $fExport = ("Yes" | %{ If($Entry = Read-Host "  Export result to file ( Y/N - Default: $_ )"){$Entry} Else {$_} }),
-    $fFileName = (Get-FileName -fFileNameText "Get-LatestLoginLogoff_$($ENV:Computername)" -fCustomerName $fCustomerName)
+    $fFileNameText = "Get-LatestLoginLogoff_$($ENV:Computername)"
   );
   ## Default Variables
     $fUserProperty = @{n="User";e={(New-Object System.Security.Principal.SecurityIdentifier $_.ReplacementStrings[1]).Translate([System.Security.Principal.NTAccount])}}
@@ -253,7 +254,7 @@ Function Get-LoginLogoffLocal { ## Get-LoginLogoff from Logged On for Local Comp
   ## Output
     #$fResult | sort User, Time | FT -autosize;
   ## Exports
-    If (($fExport -eq "Y") -or ($fExport -eq "YES")) { $fResult | sort User, Time | Export-CSV "$($fFileName).csv" -Delimiter ';' -Encoding UTF8 -NoTypeInformation; };
+    If (($fExport -eq "Y") -or ($fExport -eq "YES")) { Export-CSVData -fFileNameText "$($fFileNameText)" -fCustomerName $fCustomerName -fExportData $($fResult | sort User, Time) };
   ## Return
     [hashtable]$Return = @{};
     $Return.LoginLogoff = $fResult | sort User, Time;
@@ -265,7 +266,7 @@ Function Get-LoginLogoffDomain { ## Get-LoginLogoffDomain (Remote) from Event Lo
     $fQueryComputers = $(Get-QueryComputers),
     $fEventLogStartTime = $(Get-LogStartTime -DefaultDays "7" -DefaultHours "12"),
     $fExport = ("Yes" | %{ If($Entry = Read-Host "  Export result to file ( Y/N - Default: $_ )"){$Entry} Else {$_} }),
-    $fFileName = (Get-FileName -fFileNameText "Servers_Get-LatestLoginLogoff" -fCustomerName $fCustomerName)
+    $fFileNameText = "Servers_Get-LatestLoginLogoff"
   );
   ## Default Variables
     $fUserProperty = @{n="User";e={(New-Object System.Security.Principal.SecurityIdentifier $_.ReplacementStrings[1]).Translate([System.Security.Principal.NTAccount])}};
@@ -281,7 +282,7 @@ Function Get-LoginLogoffDomain { ## Get-LoginLogoffDomain (Remote) from Event Lo
   ## Output
     #$fResult | sort User, Time | FT -autosize;
   ## Exports
-    If (($fExport -eq "Y") -or ($fExport -eq "YES")) { $fResult | sort User, Time | Export-CSV "$($fFileName).csv" -Delimiter ';' -Encoding UTF8 -NoTypeInformation; };
+    If (($fExport -eq "Y") -or ($fExport -eq "YES")) { Export-CSVData -fFileNameText "$($fFileNameText)" -fCustomerName $fCustomerName -fExportData $($fResult | sort User, Time) };
   ## Return
     [hashtable]$Return = @{};
     $Return.LoginLogoff = $fResult | sort User, Time;
@@ -291,18 +292,18 @@ Function Get-ADUsers {## Get AD Users
   Param(
     $fCustomerName = $(Get-CustomerName),
 	$fExport = ("Yes" | %{ If($Entry = Read-Host "  Export result to file ( Y/N - Default: $_ )"){$Entry} Else {$_} }),
-    $fFileName = (Get-FileName -fFileNameText "ADUsers" -fCustomerName $fCustomerName)
+    $fFileNameText = "ADUsers"
   );
   ## Script
     Show-Title "Get AD Users";
-    $fResult = Get-Aduser -Filter * -Properties *  | Sort-Object -Property samaccountname | Select CN, DisplayName, Samaccountname,@{n="LastLogonDate";e={[datetime]::FromFileTime($_.lastLogonTimestamp).ToString("yyyy-MM-dd HH:mm:ss")}}, Enabled, PasswordNeverExpires, @{Name='PwdLastSet';Expression={[DateTime]::FromFileTime($_.PwdLastSet).ToString("yyyy-MM-dd HH:mm:ss")}}, Description;
+    $fResult = Get-Aduser -Filter * -Properties *  | Sort-Object -Property samaccountname | Select CN, DisplayName, Samaccountname,@{n="LastLogonDate";e={[datetime]::FromFileTime($_.lastLogonTimestamp).ToString("yyyy-MM-dd HH:mm:ss")}}, Enabled, LockedOut, PasswordNeverExpires, @{Name='PwdLastSet';Expression={[DateTime]::FromFileTime($_.PwdLastSet).ToString("yyyy-MM-dd HH:mm:ss")}}, Description;
   ## Output
-    #$fResult | Sort DisplayName | Select CN,DisplayName,Samaccountname,LastLogonDate,Enabled,PasswordNeverExpires,PwdLastSet,Description;
+    #$fResult | Sort DisplayName | Select CN, DisplayName, Samaccountname, LastLogonDate, Enabled, LockedOut, PasswordNeverExpires, PwdLastSet, Description;
   ## Exports
-    If (($fExport -eq "Y") -or ($fExport -eq "YES")) { $fResult | Sort DisplayName | Select CN,DisplayName, Samaccountname, LastLogonDate, Enabled, PasswordNeverExpires, PwdLastSet, Description | Export-CSV "$($fFileName).csv" -Delimiter ';' -Encoding UTF8 -NoTypeInformation; };
+    If (($fExport -eq "Y") -or ($fExport -eq "YES")) { Export-CSVData -fFileNameText "$($fFileNameText)" -fCustomerName $fCustomerName -fExportData $($fResult | Sort DisplayName | Select CN,DisplayName, Samaccountname, LastLogonDate, Enabled, LockedOut, PasswordNeverExpires, PwdLastSet, Description) };
   ## Return
     [hashtable]$Return = @{};
-    $Return.ADUsers = $fResult | Sort DisplayName | Select CN, DisplayName, Samaccountname, LastLogonDate, Enabled, PasswordNeverExpires, PwdLastSet, Description;
+    $Return.ADUsers = $fResult | Sort DisplayName | Select CN, DisplayName, Samaccountname, LastLogonDate, Enabled, LockedOut, PasswordNeverExpires, PwdLastSet, Description;
     Return $Return;
 };
 Function Get-InactiveADUsers {## Get inactive AD Users / Latest Logon more than eg 90 days
@@ -310,19 +311,19 @@ Function Get-InactiveADUsers {## Get inactive AD Users / Latest Logon more than 
     $fCustomerName = $(Get-CustomerName),
     $fDaysInactive = ("90" | %{ If($Entry = Read-Host "  Enter number of inactive days (Default: $_ Days)"){$Entry} Else {$_} }),
 	$fExport = ("Yes" | %{ If($Entry = Read-Host "  Export result to file ( Y/N - Default: $_ )"){$Entry} Else {$_} }),
-    $fFileName = (Get-FileName -fFileNameText "Inactive_ADUsers_last_$($fDaysInactive)_days" -fCustomerName $fCustomerName)
+    $fFileNameText = "Inactive_ADUsers_last_$($fDaysInactive)_days"
   );
   ## Script
     Show-Title "Get AD Users Latest Logon / inactive more than $($fDaysInactive) days";
 	$fDaysInactiveTimestamp = [DateTime]::Now.AddDays(-$($fDaysInactive));
-    $fResult = Get-Aduser -Filter {(LastLogonTimeStamp -lt $fDaysInactiveTimestamp) -or (LastLogonTimeStamp -notlike "*")} -Properties *  | Sort-Object -Property samaccountname | Select CN,DisplayName,Samaccountname,@{n="LastLogonDate";e={[datetime]::FromFileTime($_.lastLogonTimestamp).ToString("yyyy-MM-dd HH:mm:ss")}},Enabled,PasswordNeverExpires,@{Name='PwdLastSet';Expression={[DateTime]::FromFileTime($_.PwdLastSet).ToString("yyyy-MM-dd HH:mm:ss")}},Description;
+    $fResult = Get-Aduser -Filter {(LastLogonTimeStamp -lt $fDaysInactiveTimestamp) -or (LastLogonTimeStamp -notlike "*")} -Properties *  | Sort-Object -Property samaccountname | Select CN,DisplayName,Samaccountname,@{n="LastLogonDate";e={[datetime]::FromFileTime($_.lastLogonTimestamp).ToString("yyyy-MM-dd HH:mm:ss")}},Enabled,LockedOut, PasswordNeverExpires,@{Name='PwdLastSet';Expression={[DateTime]::FromFileTime($_.PwdLastSet).ToString("yyyy-MM-dd HH:mm:ss")}},Description;
   ## Output
-    #$fResult | Sort DisplayName | Select CN,DisplayName,Samaccountname,LastLogonDate,Enabled,PasswordNeverExpires,PwdLastSet,Description;
+    #$fResult | Sort DisplayName | Select CN,DisplayName,Samaccountname,LastLogonDate,Enabled,LockedOut, PasswordNeverExpires,PwdLastSet,Description;
   ## Exports
-    If (($fExport -eq "Y") -or ($fExport -eq "YES")) { $fResult | Sort DisplayName | Select CN,DisplayName, Samaccountname, LastLogonDate, Enabled, PasswordNeverExpires, PwdLastSet, Description | Export-CSV "$($fFileName).csv" -Delimiter ';' -Encoding UTF8 -NoTypeInformation; };
+    If (($fExport -eq "Y") -or ($fExport -eq "YES")) { Export-CSVData -fFileNameText "$($fFileNameText)" -fCustomerName $fCustomerName -fExportData $($fResult | Sort DisplayName | Select CN,DisplayName, Samaccountname, LastLogonDate, Enabled, LockedOut, PasswordNeverExpires, PwdLastSet, Description) };
   ## Return
     [hashtable]$Return = @{};
-    $Return.InactiveADUsers = $fResult | Sort DisplayName | Select CN,DisplayName,Samaccountname,LastLogonDate,Enabled,PasswordNeverExpires,PwdLastSet,Description;
+    $Return.InactiveADUsers = $fResult | Sort DisplayName | Select CN,DisplayName,Samaccountname,LastLogonDate,Enabled,LockedOut, PasswordNeverExpires,PwdLastSet,Description;
     Return $Return;
 };
 Function Get-InactiveADComputers {## Get inactive AD Computers / Latest Logon more than eg 90 days
@@ -330,7 +331,7 @@ Function Get-InactiveADComputers {## Get inactive AD Computers / Latest Logon mo
     $fCustomerName = $(Get-CustomerName),
     $fDaysInactive = ("90" | %{ If($Entry = Read-Host "  Enter number of inactive days (Default: $_ Days)"){$Entry} Else {$_} }),
 	$fExport = ("Yes" | %{ If($Entry = Read-Host "  Export result to file ( Y/N - Default: $_ )"){$Entry} Else {$_} }),
-    $fFileName = (Get-FileName -fFileNameText "Inactive_ADComputers_last_$($fDaysInactive)_days" -fCustomerName $fCustomerName)
+    $fFileNameText = "Inactive_ADComputers_last_$($fDaysInactive)_days"
   );
   ## Script
     Show-Title "Get AD Computers Latest Logon / inactive more than $($fDaysInactive) days";
@@ -339,7 +340,7 @@ Function Get-InactiveADComputers {## Get inactive AD Computers / Latest Logon mo
   ## Output
     #$fResult | Sort CN | Select CN, LastLogonDate, OperatingSystem, CanonicalName;
   ## Exports
-    If (($fExport -eq "Y") -or ($fExport -eq "YES")) { $fResult | Sort CN | Select CN, LastLogonDate, Enabled, OperatingSystem, CanonicalName | Export-CSV "$($fFileName).csv" -Delimiter ';' -Encoding UTF8 -NoTypeInformation; };
+    If (($fExport -eq "Y") -or ($fExport -eq "YES")) { Export-CSVData -fFileNameText "$($fFileNameText)" -fCustomerName $fCustomerName -fExportData $($fResult | Sort CN | Select CN, LastLogonDate, Enabled, OperatingSystem, CanonicalName) };
   ## Return
     [hashtable]$Return = @{};
     $Return.InactiveADComputers = $fResult | Sort CN | Select CN, LastLogonDate, OperatingSystem, Enabled, CanonicalName;
@@ -349,7 +350,7 @@ Function Get-ADServers {## Get AD Servers
   Param(
     $fCustomerName = $(Get-CustomerName),
 	$fExport = ("Yes" | %{ If($Entry = Read-Host "  Export result to file ( Y/N - Default: $_ )"){$Entry} Else {$_} }),
-    $fFileName = (Get-FileName -fFileNameText "ADServers" -fCustomerName $fCustomerName)
+    $fFileNameText = "ADServers"
   );
   ## Script
     Show-Title "Get AD Server";
@@ -357,7 +358,7 @@ Function Get-ADServers {## Get AD Servers
   ## Output
     #$fResult | Sort CN | Select CN, LastLogonDate, Enabled, OperatingSystem, CanonicalName;
   ## Exports
-    If (($fExport -eq "Y") -or ($fExport -eq "YES")) { $fResult | Sort CN | Select CN, LastLogonDate, Enabled, OperatingSystem, CanonicalName | Export-CSV "$($fFileName).csv" -Delimiter ';' -Encoding UTF8 -NoTypeInformation; };
+    If (($fExport -eq "Y") -or ($fExport -eq "YES")) { Export-CSVData -fFileNameText "$($fFileNameText)" -fCustomerName $fCustomerName -fExportData $($fResult | Sort CN | Select CN, LastLogonDate, Enabled, OperatingSystem, CanonicalName) };
   ## Return
     [hashtable]$Return = @{};
     $Return.ADServers = $fResult | Sort CN | Select CN, LastLogonDate, Enabled, OperatingSystem, CanonicalName;
@@ -367,16 +368,16 @@ Function Get-UserPasswordNeverExpires {## Get Password Never Expires for User Ac
   Param(
     $fCustomerName = $(Get-CustomerName),
     $fExport = ("Yes" | %{ If($Entry = Read-Host "  Export result to file ( Y/N - Default: $_ )"){$Entry} Else {$_} }),
-    $fFileName = (Get-FileName -fFileNameText "UserPasswordNeverExpires" -fCustomerName $fCustomerName)
+    $fFileNameText = "UserPasswordNeverExpires"
   );
   ## Script
     Show-Title "Get Password Never Expires for User Accounts";
     $fDaysInactiveTimestamp = [DateTime]::Now.AddDays(-$($fDaysInactive));
-    $fResult = Get-ADUser -Filter * -Properties Name, PasswordNeverExpires, pwdlastSet | where { $_.passwordNeverExpires -eq $true } | Sort Name | Select-Object Name, SamAccountName, @{n="PwdNeverExpires";e={$_.PasswordNeverExpires}}, @{n="PwdLastSet";e={[datetime]::FromFileTime($_."PwdLastSet").ToString("yyyy-MM-dd HH:mm:ss")}}, Enabled;
+    $fResult = Get-ADUser -Filter * -Properties Name, LockedOut, PasswordNeverExpires, pwdlastSet | where { $_.passwordNeverExpires -eq $true } | Sort Name | Select-Object Name, SamAccountName, LockedOut, @{n="PwdNeverExpires";e={$_.PasswordNeverExpires}}, @{n="PwdLastSet";e={[datetime]::FromFileTime($_."PwdLastSet").ToString("yyyy-MM-dd HH:mm:ss")}}, Enabled;
   ## Output
     #$fResult;
   ## Exports
-    If (($fExport -eq "Y") -or ($fExport -eq "YES")) { $fResult | Export-CSV "$($fFileName).csv" -Delimiter ';' -Encoding UTF8 -NoTypeInformation; };
+    If (($fExport -eq "Y") -or ($fExport -eq "YES")) { Export-CSVData -fFileNameText "$($fFileNameText)" -fCustomerName $fCustomerName -fExportData $($fResult) };
   ## Return
     [hashtable]$Return = @{};
     $Return.UserPasswordNeverExpires = $fResult;
@@ -386,25 +387,25 @@ Function Get-ITM8Users {## Get ITM8 AD Users
   Param(
     $fCustomerName = $(Get-CustomerName),
 	$fExport = ("Yes" | %{ If($Entry = Read-Host "  Export result to file ( Y/N - Default: $_ )"){$Entry} Else {$_} }),
-    $fFileName = (Get-FileName -fFileNameText "ITM8_Users" -fCustomerName $fCustomerName)
+    $fFileNameText = "ITM8_Users"
   );
   ## Script
     Show-Title "Get ITM8 AD Users";
-    $fResult = Get-ADUser -Filter * -Properties * | ? { ($_.DistinguishedName -Like "*OU=ITM8*") -or ($_.Description -like "*ITM8*") -or ($_.Samaccountname -like "*ITM8*") -or ($_.DisplayName -like "*ITM8*") -or ($_.DistinguishedName -Like "*OU=Progressive*") -or ($_.Description -like "*Progressive*") -or ($_.Samaccountname -like "*ProAdmin*") -or ($_.DisplayName -like "*ProAdmin*") -or ($_.Samaccountname -like "*PIT-Support*") -or ($_.DisplayName -like "*PIT-Support*") -or ($_.Samaccountname -like "*DTAdmin*") -or ($_.DisplayName -like "*DTAdmin*")} | Sort Enabled, DisplayName | Select DisplayName, Samaccountname, @{n="LastLogonDate";e={[datetime]::FromFileTime($_.lastLogonTimestamp).ToString("yyyy-MM-dd HH:mm:ss")}}, Enabled, PasswordNeverExpires, @{Name='PwdLastSet';Expression={[DateTime]::FromFileTime($_.PwdLastSet).ToString("yyyy-MM-dd HH:mm:ss")}}, Description, DistinguishedName;
+    $fResult = Get-ADUser -Filter * -Properties * | ? { ($_.DistinguishedName -Like "*OU=ITM8*") -or ($_.Description -like "*ITM8*") -or ($_.Samaccountname -like "*ITM8*") -or ($_.DisplayName -like "*ITM8*") -or ($_.DistinguishedName -Like "*OU=Progressive*") -or ($_.Description -like "*Progressive*") -or ($_.Samaccountname -like "*ProAdmin*") -or ($_.DisplayName -like "*ProAdmin*") -or ($_.Samaccountname -like "*PIT-Support*") -or ($_.DisplayName -like "*PIT-Support*") -or ($_.Samaccountname -like "*DTAdmin*") -or ($_.DisplayName -like "*DTAdmin*")} | Sort Enabled, DisplayName | Select DisplayName, Samaccountname, @{n="LastLogonDate";e={[datetime]::FromFileTime($_.lastLogonTimestamp).ToString("yyyy-MM-dd HH:mm:ss")}}, Enabled, LockedOut, PasswordNeverExpires, @{Name='PwdLastSet';Expression={[DateTime]::FromFileTime($_.PwdLastSet).ToString("yyyy-MM-dd HH:mm:ss")}}, Description, DistinguishedName;
   ## Output
-    #$fResult.count; $fResult | Sort Enabled, DisplayName | ft ;# Select CN,DisplayName,Samaccountname,LastLogonDate,Enabled,PasswordNeverExpires,PwdLastSet,Description;
+    #$fResult.count; $fResult | Sort Enabled, DisplayName | ft ;# Select CN,DisplayName,Samaccountname,LastLogonDate,Enabled,LockedOut, PasswordNeverExpires,PwdLastSet,Description;
   ## Exports
-    If (($fExport -eq "Y") -or ($fExport -eq "YES")) { $fResult | Sort Enabled, DisplayName | Select DisplayName, Samaccountname, LastLogonDate, Enabled, PasswordNeverExpires, PwdLastSet, Description, DistinguishedName | Export-CSV "$($fFileName).csv" -Delimiter ';' -Encoding UTF8 -NoTypeInformation; };
+    If (($fExport -eq "Y") -or ($fExport -eq "YES")) { Export-CSVData -fFileNameText "$($fFileNameText)" -fCustomerName $fCustomerName -fExportData $($fResult | Sort Enabled, DisplayName | Select DisplayName, Samaccountname, LastLogonDate, Enabled, LockedOut, PasswordNeverExpires, PwdLastSet, Description, DistinguishedName) };
   ## Return
     [hashtable]$Return = @{};
-    $Return.ITM8Users = $fResult | Sort Enabled, DisplayName | Select DisplayName, Samaccountname, LastLogonDate, Enabled, PasswordNeverExpires, PwdLastSet, Description, DistinguishedName;
+    $Return.ITM8Users = $fResult | Sort Enabled, DisplayName | Select DisplayName, Samaccountname, LastLogonDate, Enabled, LockedOut, PasswordNeverExpires, PwdLastSet, Description, DistinguishedName;
     Return $Return;
 };
 Function Get-HotFixInstallDatesLocal { ### Get-HotFixInstallDates for Local Computer/Server
   Param(
     $fHotfixInstallDates = ("3" | %{ If($Entry = Read-Host "  Enter number of Hotfix-install dates per Computer (Default: $_ Install Dates)"){$Entry} Else {$_} }),
     $fExport = ("Yes" | %{ If($Entry = Read-Host "  Export result to file ( Y/N - Default: $_ )"){$Entry} Else {$_} }),
-    $fFileName = (Get-FileName -fFileNameText "Get-HotFixInstallDates_$($ENV:Computername)" -fCustomerName $fCustomerName)
+    $fFileNameText = "Get-HotFixInstallDates_$($ENV:Computername)"
     );
   ## Script
     Show-Title "Get latest $($fHotfixInstallDates) HotFix Install Dates Local Computer/Server";
@@ -414,7 +415,7 @@ Function Get-HotFixInstallDatesLocal { ### Get-HotFixInstallDates for Local Comp
   ## Output
     #$fResult | sort MachineName, TimeGenerated | Select PSComputerName, InstalledOn, InstalledBy, Description, HotFixID, OperatingSystem, IPv4Address | FT -autosize;
   ## Exports
-    If (($fExport -eq "Y") -or ($fExport -eq "YES")) { $fResult | sort MachineName, TimeGenerated | Select PSComputerName, InstalledOn, InstalledBy, Description, HotFixID, OperatingSystem, IPv4Address | Export-CSV "$($fFileName).csv" -Delimiter ';' -Encoding UTF8 -NoTypeInformation; };
+    If (($fExport -eq "Y") -or ($fExport -eq "YES")) { Export-CSVData -fFileNameText "$($fFileNameText)" -fCustomerName $fCustomerName -fExportData $($fResult | sort MachineName, TimeGenerated | Select PSComputerName, InstalledOn, InstalledBy, Description, HotFixID, OperatingSystem, IPv4Address) };
   ## Return
     [hashtable]$Return = @{};
     $Return.HotFixInstallDates = $fResult | sort MachineName, TimeGenerated | Select PSComputerName, InstalledOn, InstalledBy, Description, HotFixID, OperatingSystem, IPv4Address;
@@ -427,7 +428,7 @@ Function Get-HotFixInstallDatesDomain { ### Get-HotFixInstallDates for multiple 
     $fHotfixInstallDates = ("3" | %{ If($Entry = Read-Host "  Enter number of Hotfix-install dates per Computer (Default: $_ Install Dates)"){$Entry} Else {$_} }),
     #$fExport = ("Yes" | %{ If($Entry = Read-Host "  Export result to file ( Y/N - Default: $_ )"){$Entry} Else {$_} }),
     $fExport = "Yes",
-    $fFileName = (Get-FileName -fFileNameText "Servers_Get-HotFixInstallDates" -fCustomerName $fCustomerName)
+    $fFileNameText = "Servers_Get-HotFixInstallDates"
     );
   ## Script
     Show-Title "Get latest $($fHotfixInstallDates) HotFix Install Dates multiple Domain Servers";
@@ -469,7 +470,7 @@ Function Get-HotFixInstallDatesDomain { ### Get-HotFixInstallDates for multiple 
   ## Output
     #$fResult | sort MachineName, TimeGenerated | Select PSComputerName, InstalledOn, InstalledBy, Description, HotFixID, OperatingSystem, IPv4Address | FT -autosize;
   ## Exports
-    If (($fExport -eq "Y") -or ($fExport -eq "YES")) { $fResult | sort PSComputerName | Select PSComputerName, InstalledOn, InstalledBy, Description, HotFixID, OperatingSystem, IPv4Address | Export-CSV "$($fFileName).csv" -Delimiter ';' -Encoding UTF8 -NoTypeInformation; };
+    If (($fExport -eq "Y") -or ($fExport -eq "YES")) { Export-CSVData -fFileNameText "$($fFileNameText)" -fCustomerName $fCustomerName -fExportData $($fResult | sort PSComputerName | Select PSComputerName, InstalledOn, InstalledBy, Description, HotFixID, OperatingSystem, IPv4Address) };
   ## Return
     [hashtable]$Return = @{};
     $Return.HotFixInstallDates = $fResult | sort PSComputerName | Select PSComputerName, InstalledOn, InstalledBy, Description, HotFixID, OperatingSystem, IPv4Address;
@@ -479,7 +480,7 @@ Function Get-HotFixInstalledLocal { ### Get-HotFixInstalled on Local Computer/Se
   Param(
     $fHotfixInstallDays = ("90" | %{ If($Entry = Read-Host "  Enter number of days for Installed Hotfixes on Local Computer/Server (Default: $_ Install Days)"){$Entry} Else {$_} }),
     $fExport = ("Yes" | %{ If($Entry = Read-Host "  Export result to file ( Y/N - Default: $_ )"){$Entry} Else {$_} }),
-    $fFileName = (Get-FileName -fFileNameText "Get-HotFixInstalled_$($ENV:Computername)" -fCustomerName $fCustomerName)
+    $fFileNameText = "Get-HotFixInstalled_$($ENV:Computername)"
     );
   ## Script
     Show-Title "Get Installed HotFixes for latest $($fHotfixInstallDays) days on Local Computer/Server";
@@ -489,7 +490,7 @@ Function Get-HotFixInstalledLocal { ### Get-HotFixInstalled on Local Computer/Se
   ## Output
     #$fResult | sort InstalledBy, HotFixID -Descending | Select PSComputerName, InstalledOn, InstalledBy, Description, HotFixID, OperatingSystem, IPv4Address | FT -autosize;
   ## Exports
-    If (($fExport -eq "Y") -or ($fExport -eq "YES")) { $fResult | sort MachineName, TimeGenerated | Select PSComputerName, InstalledOn, InstalledBy, Description, HotFixID, OperatingSystem, IPv4Address | Export-CSV "$($fFileName).csv" -Delimiter ';' -Encoding UTF8 -NoTypeInformation; };
+    If (($fExport -eq "Y") -or ($fExport -eq "YES")) { Export-CSVData -fFileNameText "$($fFileNameText)" -fCustomerName $fCustomerName -fExportData $($fResult | sort MachineName, TimeGenerated | Select PSComputerName, InstalledOn, InstalledBy, Description, HotFixID, OperatingSystem, IPv4Address) };
   ## Return
     [hashtable]$Return = @{};
     $Return.HotFixInstalled = $fResult | sort InstalledBy, HotFixID -Descending | Select PSComputerName, InstalledOn, InstalledBy, Description, HotFixID, OperatingSystem, IPv4Address;
@@ -501,7 +502,7 @@ Function Get-ExpiredCertificatesLocal {## Get-ExpiredCertificates
     $fCertSearch = ("*" | %{ If($Entry = @(((Read-Host "  Enter Certificate SearchName(s), separated by comma ( Default: $_ )").Split(",")).Trim())){$Entry} Else {$_} }),
     $fExpiresBeforeDays = ("90" | %{ If($Entry = Read-Host "  Enter number of days before expire (Default: $_ Days)"){$Entry} Else {$_} }),
 	$fExport = ("Yes" | %{ If($Entry = Read-Host "  Export result to file ( Y/N - Default: $_ )"){$Entry} Else {$_} }),
-    $fFileName = (Get-FileName -fFileNameText "Get-Expired_Certificates" -fCustomerName $fCustomerName)
+    $fFileNameText = "Get-Expired_Certificates"
   );
   ## Script
     Show-Title "Get Certificates expired or expire within next $($fExpiresBeforeDays) days on Local Server";
@@ -510,12 +511,13 @@ Function Get-ExpiredCertificatesLocal {## Get-ExpiredCertificates
 	  ## Output
     #$fResult | Sort Expires, FriendlyName | Select Expires, FriendlyName, Subject, ParentPath, Issuer, Thumbprint | FT -autosize;
   ## Exports
-    If (($fExport -eq "Y") -or ($fExport -eq "YES")) { $fResult |  sort Expires, FriendlyName | Select ServerName, Expires, FriendlyName, Subject, ParentPath, Issuer, Thumbprint | Export-CSV "$($fFileName).csv" -Delimiter ';' -Encoding UTF8 -NoTypeInformation; };
+    If (($fExport -eq "Y") -or ($fExport -eq "YES")) { Export-CSVData -fFileNameText "$($fFileNameText)" -fCustomerName $fCustomerName -fExportData $($fResult |  sort Expires, FriendlyName | Select ServerName, Expires, FriendlyName, Subject, ParentPath, Issuer, Thumbprint) };
   ## Return
     [hashtable]$Return = @{};
     $Return.ExpiredCertificates = $fResult | Sort ServerName, Expires, FriendlyName | Select ServerName, Expires, FriendlyName, Subject, ParentPath, Issuer, Thumbprint;
     Return $Return;
-};Function Get-ExpiredCertificatesDomain {## Get-Expired_Certificates
+};
+Function Get-ExpiredCertificatesDomain {## Get-Expired_Certificates
   Param(
     $fCustomerName = $(Get-CustomerName),
     $fCertSearch = ("*" | %{ If($Entry = @(((Read-Host "  Enter Certificate SearchName(s), separated by comma ( Default: $_ )").Split(",")).Trim())){$Entry} Else {$_} }),
@@ -523,7 +525,7 @@ Function Get-ExpiredCertificatesLocal {## Get-ExpiredCertificates
     $fExpiresBeforeDays = ("90" | %{ If($Entry = Read-Host "  Enter number of days before expire (Default: $_ Days)"){$Entry} Else {$_} }),
     $fExport = ("Yes" | %{ If($Entry = Read-Host "  Export result to file ( Y/N - Default: $_ )"){$Entry} Else {$_} }),
     $fJobNamePrefix = "ExpiredCertificates_",
-    $fFileName = (Get-FileName -fFileNameText "Servers_Get-Expired_Certificates" -fCustomerName $fCustomerName)
+    $fFileNameText = "Servers_Get-Expired_Certificates"
   );
   ## Script
     Show-Title "Get Certificates expired or expire within next $($fExpiresBeforeDays) days on multiple Domain Servers";
@@ -545,7 +547,7 @@ Function Get-ExpiredCertificatesLocal {## Get-ExpiredCertificates
   ## Output
     #$fResult | Sort PSComputerName, Expires, FriendlyName | Select PSComputerName, Expires, FriendlyName, Subject, ParentPath, Issuer, Thumbprint | FT -autosize;
   ## Exports
-    If (($fExport -eq "Y") -or ($fExport -eq "YES")) { $fResult |  Sort PSComputerName, Expires, FriendlyName | Select PSComputerName, Expires, FriendlyName, Subject, ParentPath, Issuer, Thumbprint | Export-CSV "$($fFileName).csv" -Delimiter ';' -Encoding UTF8 -NoTypeInformation; };
+    If (($fExport -eq "Y") -or ($fExport -eq "YES")) { Export-CSVData -fFileNameText "$($fFileNameText)" -fCustomerName $fCustomerName -fExportData $($fResult |  Sort PSComputerName, Expires, FriendlyName | Select PSComputerName, Expires, FriendlyName, Subject, ParentPath, Issuer, Thumbprint) };
   ## Return
     [hashtable]$Return = @{};
     $Return.ExpiredCertificates = $fResult |  Sort PSComputerName, Expires, FriendlyName | Select PSComputerName, Expires, FriendlyName, Subject, ParentPath, Issuer, Thumbprint;
@@ -557,7 +559,7 @@ Function Get-TimeSyncStatusDomain {## Get TimeSync Status (Registry) - need an A
     $fQueryComputers = $(Get-QueryComputers),
     $fExport = ("Yes" | %{ If($Entry = Read-Host "  Export result to file ( Y/N - Default: $_ )"){$Entry} Else {$_} }),
     $fJobNamePrefix = "TimeSyncStatus_",
-    $fFileName = (Get-FileName -fFileNameText "TimeSyncStatus" -fCustomerName $fCustomerName)
+    $fFileNameText = "TimeSyncStatus"
   );
   ## Script
     Show-Title "Get TimeSync Status (Registry)";
@@ -597,7 +599,7 @@ Function Get-TimeSyncStatusDomain {## Get TimeSync Status (Registry) - need an A
  ## Output
     #$fResult | Sort Servername | FT Servername, NTPServer, NTPType, TimeServiceStatus;
   ## Exports
-    If (($fExport -eq "Y") -or ($fExport -eq "YES")) { $fResult | Sort Servername | Select Servername, NTPServer, NTPType, TimeServiceStatus | Export-CSV "$($fFileName).csv" -Delimiter ';' -Encoding UTF8 -NoTypeInformation; };
+    If (($fExport -eq "Y") -or ($fExport -eq "YES")) { Export-CSVData -fFileNameText "$($fFileNameText)" -fCustomerName $fCustomerName -fExportData $($fResult | Sort Servername | Select Servername, NTPServer, NTPType, TimeServiceStatus) };
   ## Return
     [hashtable]$Return = @{};
     $Return.TimeSyncStatus = $fResult | Sort Servername | FT Servername, NTPServer, NTPType, TimeServiceStatus;
@@ -609,7 +611,7 @@ Function Get-DateTimeStatusDomain {## Get Date & Time Status - need an AD Server
     $fQueryComputers = $(Get-QueryComputers),
     $fExport = ("Yes" | %{ If($Entry = Read-Host "  Export result to file ( Y/N - Default: $_ )"){$Entry} Else {$_} }),
     $fJobNamePrefix = "DateTimeStatus_",
-    $fFileName = (Get-FileName -fFileNameText "DateTimeStatus" -fCustomerName $fCustomerName)
+    $fFileNameText = "DateTimeStatus"
 	);
   ## Script
     Show-Title "Get Date and Time status from Domain Servers";
@@ -653,7 +655,7 @@ Function Get-DateTimeStatusDomain {## Get Date & Time Status - need an AD Server
   ## Output
     #$fResult | Sort PSComputerName | Select PSComputerName, InternetTime, LocalTime, LocalNTPServer, LocalCulture, LocalTimeZone, InternetTimeZone;
   ## Exports
-    If (($fExport -eq "Y") -or ($fExport -eq "YES")) { $fResult | Sort PSComputerName | Select PSComputerName, InternetTime, LocalTime, LocalNTPServer, LocalCulture, LocalTimeZone, InternetTimeZone | Export-CSV "$($fFileName).csv" -Delimiter ';' -Encoding UTF8 -NoTypeInformation; };
+    If (($fExport -eq "Y") -or ($fExport -eq "YES")) { Export-CSVData -fFileNameText "$($fFileNameText)" -fCustomerName $fCustomerName -fExportData $($fResult | Sort PSComputerName | Select PSComputerName, InternetTime, LocalTime, LocalNTPServer, LocalCulture, LocalTimeZone, InternetTimeZone) };
   ## Return
     [hashtable]$Return = @{};
     $Return.DateTimeStatus = $fResult | Sort PSComputerName | Select PSComputerName, InternetTime, LocalTime, LocalNTPServer, LocalCulture, LocalTimeZone, InternetTimeZone;
@@ -664,7 +666,7 @@ Function Get-FSLogixErrorsDomain {## Get FSLogix Errors - need an AD Server or S
     $fCustomerName = $(Get-CustomerName),
     $fQueryComputers = $(Get-QueryComputers),
     $fLogDays = ("7" | %{ If($Entry = Read-Host "  Enter number of days in searchscope (Default: $_ Days)"){$Entry} Else {$_} }),
-    $fFileName = (Get-FileName -fFileNameText "FSLogix Errors" -fCustomerName $fCustomerName),
+    $fFileNameText = "FSLogixErrors",
     $fErrorCodes1 = @("00000079", "0000001f", "00000020"),
     $fErrorCodes2 = @("00000079", "0000001f"),
     $fErrorCodeList = "  Internal Error Code Description:
@@ -724,15 +726,15 @@ Function Get-FSLogixErrorsDomain {## Get FSLogix Errors - need an AD Server or S
     };
     $fResult = Foreach ($fErrorCode in $fErrorCodes) {$fLogText | Where-Object { $_ -like "*$($fErrorCode)*" }};
   ## Output
-    #$fResult | Sort DisplayName | Select CN,DisplayName,Samaccountname,LastLogonDate,Enabled,PasswordNeverExpires,PwdLastSet,Description;
+    #$fResult | Sort DisplayName | Select CN,DisplayName,Samaccountname,LastLogonDate,Enabled,LockedOut, PasswordNeverExpires,PwdLastSet,Description;
     #If ($fExportAllErrors -ne $true) { $fResult | sort Servername, Date, Time | FT Servername, Date, Time, Error, tid, LogText; Write-Host "   Number of errorcodes listed: $($fResult.count)`n"; };
     If ($fExportAllErrors -ne $true) { Write-Host "`n  Number of errorcodes listed: $($fResult.count)`n"; } else { Write-Host "`n  Number of errorcodes listed: $($fLogText.count)`n" };
   ## Exports
-    #If (($fExport -eq "Y") -or ($fExport -eq "YES")) { $fResult | Sort Servername, Date, Time | Select Servername, Date, Time, Error, tid, LogText | Export-CSV "$($fFileName).csv" -Delimiter ';' -Encoding UTF8 -NoTypeInformation; };
+    #If (($fExport -eq "Y") -or ($fExport -eq "YES")) { Export-CSVData -fFileNameText "$($fFileNameText)" -fCustomerName $fCustomerName -fExportData $($fResult | Sort Servername, Date, Time | Select Servername, Date, Time, Error, tid, LogText) };
     If ($fExportAllErrors -ne $true) { 
-      $fResult | sort Servername, Date, Time | Select Servername, Date, Time, Error, tid, LogText | Export-CSV "$($fFileName).csv" -Delimiter ';' -Encoding UTF8 -NoTypeInformation;
+      Export-CSVData -fFileNameText "$($fFileNameText)" -fCustomerName $fCustomerName -fExportData $($fResult | sort Servername, Date, Time | Select Servername, Date, Time, Error, tid, LogText)
 	} else {
-      $fLogText | sort Servername, Date, Time | Select Servername, Date, Time, Error, tid, LogText | Export-CSV "$($fFileName)_All_Errors.csv" -Delimiter ';' -Encoding UTF8 -NoTypeInformation;
+      Export-CSVData -fFileNameText "$($fFileNameText)" -fCustomerName $fCustomerName -fExportData $($fLogText | sort Servername, Date, Time | Select Servername, Date, Time, Error, tid, LogText)
 	};
   ## Return
     [hashtable]$Return = @{};
@@ -744,7 +746,7 @@ Function Get-FolderPermissionLocal { ##
     $fCustomerName = $(Get-CustomerName),
     $fFolderPaths = ($Entry = @(((Read-Host "  Enter FolderPath(s) to get Permission list, separated by comma ").Split(",")).Trim())),
     $fExport = ("Yes" | %{ If($Entry = Read-Host "  Export result to file ( Y/N - Default: $_ )"){$Entry} Else {$_} }),
-    $fFileName = (Get-FileName -fFileNameText "Get-FolderPermission_$($ENV:Computername)" -fCustomerName $($fCustomerName))
+    $fFileNameText = "Get-FolderPermission_$($ENV:Computername)"
   );
   ## Script
     Show-Title "Get Folder Permissions on Local Computer/Server";
@@ -759,13 +761,29 @@ Function Get-FolderPermissionLocal { ##
             'Permissions'= $fAccess.FileSystemRights;
             'Inherited'=$fAccess.IsInherited;
       });};};};
+    $fResultLevel_01_02 = ForEach ($fFolderPath in $fFolderPaths) {
+      $fFoldersLevel_01 = Get-ChildItem -Directory -Path "$($fFolderPath)"
+      $fFoldersLevel_02 = Foreach ($Folder in $fFoldersLevel_01.fullname) {Get-ChildItem -Directory -Path $Folder}
+      $fFoldersLevel_01_02 = ($fFoldersLevel_01+$fFoldersLevel_02 | Sort FullName)
+      ForEach ($fFolder in $fFoldersLevel_01_02) {
+        $fAcl = Get-Acl -Path $fFolder.FullName;
+        ForEach ($fAccess in $fAcl.Access) {
+          New-Object PSObject -Property ([ordered]@{
+            'FolderName'=$fFolder.FullName;
+            'Group/User'=$fAccess.IdentityReference;
+            'Permissions'= $fAccess.FileSystemRights;
+            'Inherited'=$fAccess.IsInherited;
+      });};};};
   ## Output
     #$fResult | Sort FolderName, "Group/User" | Select FolderName, "Group/User", Permissions, Inherited | FT -autosize;
+	#$fResultLevel_01_02 | Sort FolderName, "Group/User" | Select FolderName, "Group/User", Permissions, Inherited | FT -autosize;
   ## Exports
-    If (($fExport -eq "Y") -or ($fExport -eq "YES")) {$fResult | Sort FolderName, "Group/User" | Select FolderName, "Group/User", Permissions, Inherited | Export-CSV "$($fFileName).csv" -Delimiter ';' -Encoding UTF8 -NoTypeInformation; };
+    If (($fExport -eq "Y") -or ($fExport -eq "YES")) { Export-CSVData -fFileNameText "$($fFileNameText)" -fCustomerName $fCustomerName -fExportData $($fResult | Sort FolderName, "Group/User" | Select FolderName, "Group/User", Permissions, Inherited) };
+    If (($fExport -eq "Y") -or ($fExport -eq "YES")) { Export-CSVData -fFileNameText "$($fFileNameText)_FoldersLevel_01_02" -fCustomerName $fCustomerName -fExportData $($fResultLevel_01_02 | Sort FolderName, "Group/User" | Select FolderName, "Group/User", Permissions, Inherited) };
   ## Return
     [hashtable]$Return = @{};
     $Return.FolderPermission = $fResult | Sort FolderName, "Group/User" | Select FolderName, "Group/User", Permissions, Inherited;
+	$Return.FolderPermission_Level_01_02 = $fResultLevel_01_02 | Sort FolderName, "Group/User" | Select FolderName, "Group/User", Permissions, Inherited;
     Return $Return;
 };
 ### End Functions

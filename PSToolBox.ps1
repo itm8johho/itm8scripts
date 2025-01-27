@@ -7,13 +7,17 @@
 #
 # Set of Powershell scripts, that can be used by Consultants
 # for getting Customer data, like: Latest Reboot, Ad Users, AD Computers, AD Servers
-# 
-# 
+#
+#
 #
 ### Parameter and Shared Functions
-Function Verify-ADModuleInstalled { If ((Get-Module -Name ActiveDirectory -ListAvailable) -ne $null) {$True} else {If ((Get-WmiObject -class win32_optionalfeature | Where-Object { $_.Name -eq 'RemoteServerAdministrationTools'}) -ne $null) {$True} else {$false}}}
+Function Verify-ADModuleInstalled {
+  If ((Get-Module -Name ActiveDirectory -ListAvailable) -ne $null) {$True} else {If ((Get-WmiObject -class win32_optionalfeature | Where-Object { $_.Name -eq 'RemoteServerAdministrationTools'}) -ne $null) {$True} else {$false}}}
   $DomainQueryEnabled = Verify-ADModuleInstalled; $DomainQueryEnabledInfo = "`n  This function cannot be executed, due to missing Active Directory-functionalities (AD / RSAT) `n"
-Function Get-CustomerName { ("$($Env:USERDOMAIN)" | %{ If($Entry = Read-Host "  Enter CustomerName ( Default: $_ )"){"$($Entry)_"} Else {"$($_)_"} })}; # Add this line to Params: $fCustomerName = $(Get-CustomerName)
+Function Get-CustomerName {
+  # Add this line to Params: $fCustomerName = $(Get-CustomerName)
+  ("$($Env:USERDOMAIN)" | %{ If($Entry = Read-Host "  Enter CustomerName ( Default: $_ )"){"$($Entry)_"} Else {"$($_)_"} })
+};
 Function Get-LogStartTime {
   # Add this line to Params: $fEventLogStartTime = (Get-LogStartTime -DefaultDays "7" -DefaultHours "12"),
   Param( $DefaultDays, $DefaultHours,
@@ -36,17 +40,20 @@ Function Get-QueryComputers {  ### Get-QueryComputers - Get Domain Servers names
     Return $fQueryComputers;
  };
 Function Export-CSVData { Param ( $fFileNameText, $fCustomerName, $fExportData ); ##
-  # Add this line: Export-CSVData -fFileNameText "$($fFileNameText)" -fCustomerName $fCustomerName -fExportData $(<EXPORTDATA>)
+  # Add this line to Params: $fFileNameText = "<FILENAME>"    /    $fFileNameText = "<FILENAME>",
+  # Add this line to Script: If (($fExport -eq "Y") -or ($fExport -eq "YES")) { Export-CSVData -fFileNameText "$($fFileNameText)" -fCustomerName $fCustomerName -fExportData $(<EXPORTDATA>) };
   $fFileNameBase = "$($fCustomerName)$(($fFileNameText).Split([IO.Path]::GetInvalidFileNameChars()) -join '_')_($(get-date -f "yyyy-MM-dd_HH.mm"))";
   $fFileName = "$([Environment]::GetFolderPath("Desktop"))\$($fFileNameBase)";
   #$fFileName = "$($env:USERPROFILE)\Desktop\$($fFileNameBase)";
-  $fExportData | Export-CSV "$($fFileName).csv" -Delimiter ';' -Encoding UTF8 -NoTypeInformation;
+  $fExportData | Export-CSV "$($fFileName).csv" -Delimiter ';' -Encoding UTF8 -NoTypeInformation -ErrorAction SilentlyContinue;
 };
 Function Show-Title {
+  # Add this line to Script: Show-Title "<TITLE>";
   Param ( [string]$Title );
     $host.UI.RawUI.WindowTitle = $Title;
 };
 Function Show-JobStatus { Param ($fJobNamePrefix)
+  # Add this line to Script: Show-JobStatus $fJobNamePrefix;
   DO { IF ((Get-Job -Name "$($fJobNamePrefix)*").count -ge 1) {$fStatus = ((Get-Job -State Completed).count/(Get-Job -Name "$($fJobNamePrefix)*").count) * 100;
     Write-Progress -Activity "Waiting for $((Get-Job -State Running).count) of $((Get-Job -Name "$($fJobNamePrefix)*").count) job(s) to complete..." -Status "$($fStatus) % completed" -PercentComplete $fStatus; }; }
   While ((Get-job -Name "$($fJobNamePrefix)*" | Where State -eq Running));
@@ -89,6 +96,7 @@ Function Show-Menu {
   If ($DomainQueryEnabled -eq $True) {Write-Host "  Press '32' for Get TimeSyncStatus for Domain Servers."};
   If ($DomainQueryEnabled -eq $True) {Write-Host "  Press '33' for Get DateTimeStatus for Domain Servers."};
   If ($DomainQueryEnabled -eq $True) {Write-Host "  Press '34' for Get FSLogixErrors for Domain Servers."};
+  If ($DomainQueryEnabled -eq $True) {Write-Host "  Press '35' for Get Get Active admx-/adml- Files for Domain Servers."};
   #Write-Host "  Press '99' for this option.";
   Write-Host "  ";
   Write-Host "   Press 'H'  for Toolbox Help / Information.";
@@ -100,65 +108,73 @@ Function ToolboxMenu {
     $selection = Read-Host "`n  Please make a selection"
     switch ($selection){
       "1" { "`n`n  You selected: Get LatestReboot for Local Computer/Server`n"
-        $Result = Get-LatestRebootLocal; $Result.LatestBootEventsExtended | FL; $result.LatestBootEvents | FT -Autosize; $result.LatestBootTime | FT -Autosize;
-        Pause;};
+          $Result = Get-LatestRebootLocal; $Result.LatestBootEventsExtended | FL; $result.LatestBootEvents | FT -Autosize; $result.LatestBootTime | FT -Autosize;
+          Pause;};
       "2" { "`n`n  You selected: Get LatestReboot for Domain Servers`n"
-        If ($DomainQueryEnabled -eq $True) {$Result = Get-LatestRebootDomain; $Result.LatestBootEvents | FT -Autosize;} ELSE {$DomainQueryEnabledInfo}
-        Pause;};
+          If ($DomainQueryEnabled -eq $True) {$Result = Get-LatestRebootDomain; $Result.LatestBootEvents | FT -Autosize;} ELSE {$DomainQueryEnabledInfo}
+          Pause;};
       "3" { "`n`n  You selected: Get LoginLogoff for Local Computer/Server`n"
-        $Result = Get-LoginLogoffLocal; $Result.LoginLogoff | FT -Autosize;
-        Pause;};
+          $Result = Get-LoginLogoffLocal; $Result.LoginLogoff | FT -Autosize;
+          Pause;};
       "4" { "`n`n  You selected: Get LoginLogoff for Domain Servers`n"
-        If ($DomainQueryEnabled -eq $True) {$Result = Get-LoginLogoffDomain; $Result.LoginLogoff | FT -Autosize;} ELSE {$DomainQueryEnabledInfo}
-        Pause;};
+          If ($DomainQueryEnabled -eq $True) {$Result = Get-LoginLogoffDomain; $Result.LoginLogoff | FT -Autosize;} ELSE {$DomainQueryEnabledInfo}
+          Pause;};
       "5" { "`n`n  You selected: Get AD Users`n"
-		If ($DomainQueryEnabled -eq $True) {$Result = Get-ADUsers; $Result.count; $Result.ADUsers | FT -Autosize;} ELSE {$DomainQueryEnabledInfo}
-        Pause;};
+          If ($DomainQueryEnabled -eq $True) {$Result = Get-ADUsers; $Result.count; $Result.ADUsers | FT -Autosize;} ELSE {$DomainQueryEnabledInfo}
+          Pause;};
       "6" { "`n`n  You selected: Get Inactive AD Users / last logon more than eg 90 days`n"
-		If ($DomainQueryEnabled -eq $True) {$Result = Get-InactiveADUsers; $Result.count; $Result.InactiveADUsers | FT -Autosize;} ELSE {$DomainQueryEnabledInfo}
-        Pause;};
+          If ($DomainQueryEnabled -eq $True) {$Result = Get-InactiveADUsers; $Result.count; $Result.InactiveADUsers | FT -Autosize;} ELSE {$DomainQueryEnabledInfo}
+          Pause;};
       "7" { "`n`n  You selected: Get Inactive AD Computers / last active more than eg 90 days`n"
-        If ($DomainQueryEnabled -eq $True) {$Result = Get-InactiveADComputers; $Result.count; $Result.InactiveADComputers | FT -Autosize;} ELSE {$DomainQueryEnabledInfo}
-        Pause;};
+          If ($DomainQueryEnabled -eq $True) {$Result = Get-InactiveADComputers; $Result.count; $Result.InactiveADComputers | FT -Autosize;} ELSE {$DomainQueryEnabledInfo}
+          Pause;};
       "8" { "`n`n  You selected: Get AD Servers`n"
-        If ($DomainQueryEnabled -eq $True) {$Result = Get-ADServers; $Result.ADServers | FT -Autosize;} ELSE {$DomainQueryEnabledInfo}
-        Pause;};
+          If ($DomainQueryEnabled -eq $True) {$Result = Get-ADServers; $Result.ADServers | FT -Autosize;} ELSE {$DomainQueryEnabledInfo}
+          Pause;};
       "9" { "`n`n  You selected: Get Password Never Expires for User Accounts`n"
-        If ($DomainQueryEnabled -eq $True) {$Result = Get-UserPasswordNeverExpires; $Result.count; $Result.UserPasswordNeverExpires | FT -Autosize;} ELSE {$DomainQueryEnabledInfo}
-        Pause;};
+          If ($DomainQueryEnabled -eq $True) {$Result = Get-UserPasswordNeverExpires; $Result.count; $Result.UserPasswordNeverExpires | FT -Autosize;} ELSE {$DomainQueryEnabledInfo}
+          Pause;};
       "10" { "`n`n  You selected: Get ITM8 Users`n"
-		If ($DomainQueryEnabled -eq $True) {$Result = Get-ITM8Users; $Result.count; $Result.ITM8Users | FT -Autosize;} ELSE {$DomainQueryEnabledInfo}
-        Pause;};
+		  If ($DomainQueryEnabled -eq $True) {$Result = Get-ITM8Users; $Result.count; $Result.ITM8Users | FT -Autosize;} ELSE {$DomainQueryEnabledInfo}
+          Pause;};
 
       "21" { "`n`n  You selected: Get HotFixInstallDates for Local Computer/Server`n"
-        $Result = Get-HotFixInstallDatesLocal; $Result.HotFixInstallDates | FT -Autosize;
-        Pause; };
+          $Result = Get-HotFixInstallDatesLocal; $Result.HotFixInstallDates | FT -Autosize;
+          Pause; };
       "22" { "`n`n  You selected: Get HotFixInstallDates for Domain Servers`n"
-        If ($DomainQueryEnabled -eq $True) {$Result = Get-HotFixInstallDatesDomain; $Result.HotFixInstallDates | FT -Autosize;} ELSE {$DomainQueryEnabledInfo}
-        Pause;};
+          If ($DomainQueryEnabled -eq $True) {$Result = Get-HotFixInstallDatesDomain; $Result.HotFixInstallDates | FT -Autosize;} ELSE {$DomainQueryEnabledInfo}
+          Pause;};
       "23" { "`n`n  You selected: Get Installed HotFixes on Local Computer/Server`n"
-        $Result = Get-HotFixInstalledLocal; $Result.HotFixInstalled | FT -Autosize;
-        Pause; };
+          $Result = Get-HotFixInstalledLocal; $Result.HotFixInstalled | FT -Autosize;
+          Pause; };
       "25" { "`n`n  You selected: Get ExpiredCertificates for Local Server`n"
-        $Result = Get-ExpiredCertificatesLocal; $Result.ExpiredCertificates | FT -Autosize;
-        Pause;};
+          $Result = Get-ExpiredCertificatesLocal; $Result.ExpiredCertificates | FT -Autosize;
+          Pause;};
       "26" { "`n`n  You selected: Get ExpiredCertificates for Domain Servers`n"
-        If ($DomainQueryEnabled -eq $True) {$Result = Get-ExpiredCertificatesDomain; $Result.ExpiredCertificates | FT -Autosize;} ELSE {$DomainQueryEnabledInfo}
-        Pause;};
+          If ($DomainQueryEnabled -eq $True) {$Result = Get-ExpiredCertificatesDomain; $Result.ExpiredCertificates | FT -Autosize;} ELSE {$DomainQueryEnabledInfo}
+          Pause;};
       "31" { "`n`n  You selected: Get FolderPermission for Local Computer/Server`n"
-		$Result = Get-FolderPermissionLocal; $Result.FolderPermission | FT -Autosize; $Result.FolderPermission_Level_01_02 | FT -Autosize;
-        Pause;};
+		  $Result = Get-FolderPermissionLocal; $Result.FolderPermission | FT -Autosize; $Result.FolderPermission_Level_01_02 | FT -Autosize;
+          Pause;};
       "32" { "`n`n  You selected: Get TimeSync Status for Domain Servers`n"
-        If ($DomainQueryEnabled -eq $True) {$Result = Get-TimeSyncStatusDomain; $Result.TimeSyncStatus | FT -Autosize;} ELSE {$DomainQueryEnabledInfo}
-        Pause;};
+          If ($DomainQueryEnabled -eq $True) {$Result = Get-TimeSyncStatusDomain; $Result.TimeSyncStatus | FT -Autosize;} ELSE {$DomainQueryEnabledInfo}
+          Pause;};
       "33" { "`n`n  You selected: Get DateTimeStatus for Domain Servers`n"
-        If ($DomainQueryEnabled -eq $True) {$Result = Get-DateTimeStatusDomain; $Result.DateTimeStatus | FT -Autosize;} ELSE {$DomainQueryEnabledInfo}
-        Pause;};
+          If ($DomainQueryEnabled -eq $True) {$Result = Get-DateTimeStatusDomain; $Result.DateTimeStatus | FT -Autosize;} ELSE {$DomainQueryEnabledInfo}
+          Pause;};
       "34" { "`n`n  You selected: Get FSLogixErrors for Domain Servers`n"
-        If ($DomainQueryEnabled -eq $True) {$Result = Get-FSLogixErrorsDomain; $Result.FSLogixErrors | FT -Autosize;} ELSE {$DomainQueryEnabledInfo}
-        Pause;};
+          If ($DomainQueryEnabled -eq $True) {$Result = Get-FSLogixErrorsDomain; $Result.FSLogixErrors | FT -Autosize;} ELSE {$DomainQueryEnabledInfo}
+          Pause;};
+      "35" { "`n`n  You selected: Get Active admx-/adml- Files for Domain Servers`n"
+          If ($DomainQueryEnabled -eq $True) {$Result = Get-ActiveADMxFiles;
+              $Result.admxResult | FT -Autosize; $Result.admxFilesUnique | FT -Autosize; $Result.admxCounts; ## ADMX-Files Results
+              $Result.admlResult | FT -Autosize; $Result.admlFilesUnique | FT -Autosize; $Result.admlCounts; ## ADML-Files Results
+              $Result.admxadmlFiles | FT -Autosize; ## ADMX+ADML-Files Results
+              $Result.admxCounts; $Result.admlCounts; ## Output Overview
+          } ELSE {$DomainQueryEnabledInfo}
+          Pause;};
       "99" { "`n`n  You selected: Test option #99`n"
-        Sleep 10;
+          Sleep 10;
       };
       "0" { "`n`n  You selected: Start SCOM MaintenanceMode for Local Server`n"
         #Start-SCOMMaintenanceMode;
@@ -739,6 +755,158 @@ Function Get-FSLogixErrorsDomain {## Get FSLogix Errors - need an AD Server or S
   ## Return
     [hashtable]$Return = @{};
     $Return.FSLogixErrors = $fResult | Sort Servername, Date, Time | Select Servername, Date, Time, Error, tid, LogText;
+    Return $Return;
+};
+
+Function Get-ActiveADMxFiles { ## Get-ActiveADMxFiles from AD Server
+  Param(
+    $fCustomerName = $(Get-CustomerName),
+    $fExport = ("Yes" | %{ If($Entry = Read-Host "  Export result to file ( Y/N - Default: $_ )"){$Entry} Else {$_} }),
+    # Define PolicyDefinition ADML Folder
+    #$fPolicyDefs = "\\<FULLY_QUALIFIED_DOMAIN_NAME>\SYSVOL\<FULLY_QUALIFIED_DOMAIN_NAME>\Policies\PolicyDefinitions\en-US",
+    $fPolicyDefs = "\\$($Env:USERDNSDOMAIN)\SYSVOL\$($Env:USERDNSDOMAIN)\Policies\PolicyDefinitions",
+    $fFileNameText = "Get-ActiveADMxFiles"
+  );
+  Write-Host "`n`n  Reading GPO's";
+  ## Generate a GPO report and capture it as XML
+    [xml]$fGPOs = Get-GPOReport -All -ReportType Xml
+  ## Parse captured XML
+    $fPolicyInfo = @();
+    For ($i = 0; $i -lt ($fGPOs.DocumentElement.GPO.Count); $i++) { 
+        #Process Computer Policy
+        For ($j = 0; $j -lt $fGPOs.DocumentElement.GPO[$i].Computer.ExtensionData.ChildNodes.Count; $j++) { 
+            if (($fGPOs.DocumentElement.GPO[$i].Computer.ExtensionData.ChildNodes[$j].type) -like "*:RegistrySettings") {
+                if (!($fGPOs.DocumentElement.GPO[$i].Computer.ExtensionData.ChildNodes[$j].Policy.Count -eq $null)) {
+                    For ($k = 0; $k -lt $fGPOs.DocumentElement.GPO[$i].Computer.ExtensionData.ChildNodes[$j].Policy.Count; $k++) { 
+                        $fPolInfo = "" | Select-Object gpoName, settingScope, settingName, settingState
+                        $fPolInfo.gpoName = $fGPOs.DocumentElement.GPO[$i].Name
+                        $fPolInfo.settingScope = "Computer"
+                        $fPolInfo.settingName = $fGPOs.DocumentElement.GPO[$i].Computer.ExtensionData.ChildNodes[$j].Policy[$k].Name
+                        $fPolInfo.settingState = $fGPOs.DocumentElement.GPO[$i].Computer.ExtensionData.ChildNodes[$j].Policy[$k].State
+                        $fPolicyInfo += $fPolInfo
+                    }
+                }
+                else {
+                    $fPolInfo = "" | Select-Object gpoName, settingScope, settingName, settingState
+                    $fPolInfo.gpoName = $fGPOs.DocumentElement.GPO[$i].Name
+                    $fPolInfo.settingScope = "Computer"
+                    $fPolInfo.settingName = $fGPOs.DocumentElement.GPO[$i].Computer.ExtensionData.ChildNodes[$j].Policy.Name
+                    $fPolInfo.settingState = $fGPOs.DocumentElement.GPO[$i].Computer.ExtensionData.ChildNodes[$j].Policy.State
+                    $fPolicyInfo += $fPolInfo
+                };
+            };
+        };
+        #Process User Policy
+        For ($j = 0; $j -lt $fGPOs.DocumentElement.GPO[$i].User.ExtensionData.ChildNodes.Count; $j++) { 
+            if (($fGPOs.DocumentElement.GPO[$i].User.ExtensionData.ChildNodes[$j].type) -like "*:RegistrySettings") {
+                if (!($fGPOs.DocumentElement.GPO[$i].User.ExtensionData.ChildNodes[$j].Policy.Count -eq $null)) {
+                    For ($k = 0; $k -lt $fGPOs.DocumentElement.GPO[$i].User.ExtensionData.ChildNodes[$j].Policy.Count; $k++) { 
+                        $fPolInfo = "" | Select-Object gpoName, settingScope, settingName, settingState
+                        $fPolInfo.gpoName = $fGPOs.DocumentElement.GPO[$i].Name
+                        $fPolInfo.settingScope = "User"
+                        $fPolInfo.settingName = $fGPOs.DocumentElement.GPO[$i].User.ExtensionData.ChildNodes[$j].Policy[$k].Name
+                        $fPolInfo.settingState = $fGPOs.DocumentElement.GPO[$i].User.ExtensionData.ChildNodes[$j].Policy.State
+                        $fPolicyInfo += $fPolInfo
+                    }
+                }
+                else {
+                    $fPolInfo = "" | Select-Object gpoName, settingScope, settingName, settingState
+                    $fPolInfo.gpoName = $fGPOs.DocumentElement.GPO[$i].Name
+                    $fPolInfo.settingScope = "User"
+                    $fPolInfo.settingName = $fGPOs.DocumentElement.GPO[$i].User.ExtensionData.ChildNodes[$j].Policy.Name
+    				$fPolInfo.settingState = $fGPOs.DocumentElement.GPO[$i].User.ExtensionData.ChildNodes[$j].Policy.State
+                    $fPolicyInfo += $fPolInfo
+                };
+            };
+        };
+    };
+  ## Get-ADMX-Files
+  Write-Host "  Get and Read ADMX-Files";
+    # Define output array
+    $fAdmxResult = @();
+    # Search ADMX files for policy settings
+    $fAdmxFiles = Get-ChildItem -Path $fPolicyDefs -Recurse -Filter *.admx;
+    $fAdmxResult = Foreach ($fAdmxFile in $fAdmxFiles) {
+        $fAdmxContent = (Get-Content -Path ($fAdmxFile.FullName))
+        #$out = "" | Select-Object gpoName, settingScope, settingName, settingState, admxFile, LastWriteTime
+        Foreach ($fPolInfo in $fPolicyInfo) {
+            $fADMXsettingName = $fPolInfo.settingName;
+    		if ($fAdmxContent -like "*$fADMXsettingName*") {
+                [pscustomobject]@{
+                    gpoName = $fPolInfo.gpoName
+                    settingScope = $fPolInfo.settingScope
+                    settingName = $fPolInfo.settingName
+                    settingState = $fPolInfo.settingState
+                    admxFile = $fAdmxFile.Name
+                    admxFilePath = $fAdmxFile.DirectoryName
+                    LastWriteTime = $(get-date ($fAdmxFile.LastWriteTime) -f "yyyy-MM-dd HH.mm.ss")
+                };
+            };
+        };
+    };
+  ## Get-ADML-Files
+  Write-Host "  Get and Read ADML-Files";
+    # Define output array
+    $fAdmlResult = @();
+    # Search ADML files for policy settings
+    $fAdmlFiles = Get-ChildItem -Path $fPolicyDefs -Recurse -Filter *.adml;
+    $fAdmlResult = Foreach ($fAdmlFile in $fAdmlFiles) {
+        $fAdmlContent = (Get-Content -Path ($fAdmlFile.FullName))
+        #$out = "" | Select-Object gpoName, settingScope, settingName, settingState, admlFile, LastWriteTime
+        Foreach ($fPolInfo in $fPolicyInfo) {
+            $fADMLsettingName = $fPolInfo.settingName
+            if ($fAdmlContent -like "*$fADMLsettingName*") {
+                [pscustomobject]@{
+                  gpoName = $fPolInfo.gpoName
+                  settingScope = $fPolInfo.settingScope
+                  settingName = $fPolInfo.settingName
+                  settingState = $fPolInfo.settingState
+                  admlFile = $fAdmlFile.Name
+                  admlFilePath = $fAdmlFile.DirectoryName
+                  LastWriteTime = $(Get-Date ($fAdmlFile.LastWriteTime) -f "yyyy-MM-dd HH.mm.ss")
+               };
+            };
+        };
+    };
+  Write-Host "  Preparing Data for Output and Export`n`n";
+  ## Get-ADMX-Files Results
+    $fAdmxFilesUnique = $fAdmxResult | Sort admxFile -Unique | Select admxFile, admxFilePath, LastWriteTime;
+  ## Get-ADML-Files
+    $fAdmlFilesUnique = $fAdmlResult | Sort admlFile -Unique | Select admlFile, admlFilePath, LastWriteTime;
+  ## Get-ADML-Files from ADMX-Filename
+    #$fAdmxAdmlFiles = Foreach ($fAdmxFile in $fAdmxFiles) {Get-ChildItem -Path $fPolicyDefs -Recurse | ? {$_.basename -eq $fAdmxFile.basename} | Select @{Name="ADMX-file";Expression={$fAdmxFile.Name}}, @{Name="ADML-file";Expression={$_.Fullname}}, @{Name="ADMX-file LastWriteTime";Expression={$fAdmxFile.LastWriteTime}}, @{Name="ADML-file LastWriteTime";Expression={$_.LastWriteTime}}};
+    $fAdmxAdmlFiles = Foreach ($fAdmxFile in $fAdmxFiles) {$fAdmlFiles | ? {$_.basename -eq $fAdmxFile.basename} | Select @{Name="ADMX-file";Expression={$fAdmxFile.Name}}, @{Name="ADML-file";Expression={$_.Fullname}}, @{Name="ADMX-file LastWriteTime";Expression={$fAdmxFile.LastWriteTime}}, @{Name="ADML-file LastWriteTime";Expression={$_.LastWriteTime}}};
+  ## Output
+  ## ADMX-Files Results
+    #$fAdmxResult | Sort admxFile | FT; $fAdmxFilesUnique | FT;
+    #Write-Host "  Used ADMX GPO: $($fAdmxResult.count) - ADMX files in use (Unique): $($fAdmxFilesUnique.count)";
+  ## ADML-Files Results
+    #$fAdmlResult | Sort admlFile | FT; $fAdmlFilesUnique | FT;
+    #Write-Host "  Used ADML GPO: $($fAdmlResult.count) - ADML files in use (Unique): $($fAdmlFilesUnique.count)";
+  ## ADMX+ADML-Files Results
+    #$fAdmxAdmlFiles;
+  ## Output Overview
+    #Write-Host "  Used ADMX GPO: $($fAdmxResult.count) - ADMX files in use (Unique): $($fAdmxFilesUnique.count)";
+    #Write-Host "  Used ADML GPO: $($fAdmlResult.count) - ADML files in use (Unique): $($fAdmlFilesUnique.count)";
+  ## Exports
+  ## Export ADMX-Files
+    If (($fExport -eq "Y") -or ($fExport -eq "YES")) { Export-CSVData -fFileNameText "$($fFileNameText)_ADMX" -fCustomerName $fCustomerName -fExportData $($fAdmxResult) };
+    If (($fExport -eq "Y") -or ($fExport -eq "YES")) { Export-CSVData -fFileNameText "$($fFileNameText)_ADMX_Unique" -fCustomerName $fCustomerName -fExportData $($fAdmxFilesUnique) };
+  ## Export ADML-Files
+    If (($fExport -eq "Y") -or ($fExport -eq "YES")) { Export-CSVData -fFileNameText "$($fFileNameText)_ADML" -fCustomerName $fCustomerName -fExportData $($fAdmlResult) };
+    If (($fExport -eq "Y") -or ($fExport -eq "YES")) { Export-CSVData -fFileNameText "$($fFileNameText)_ADML_Unique" -fCustomerName $fCustomerName -fExportData $($fAdmlFilesUnique) };
+  ## Export ADMX+ADML-Files
+    If (($fExport -eq "Y") -or ($fExport -eq "YES")) { Export-CSVData -fFileNameText "$($fFileNameText)_ADMXADMLFiles" -fCustomerName $fCustomerName -fExportData $($fAdmxAdmlFiles) };
+
+  ## Return 
+    [hashtable]$Return = @{};
+    $Return.admxResult = $fAdmxResult | Sort admxFile;
+    $Return.admlResult = $fAdmlResult | Sort admlFile;
+    $Return.admxFilesUnique = $fAdmxFilesUnique;
+    $Return.admlFilesUnique = $fAdmlFilesUnique;
+    $Return.admxadmlFiles = $fAdmxAdmlFiles;
+    $Return.admxCounts = "  Used ADMX GPO: $($fAdmxResult.count) - ADMX files in use (Unique): $($fAdmxFilesUnique.count)";
+    $Return.admlCounts = "  Used ADML GPO: $($fAdmlResult.count) - ADML files in use (Unique): $($fAdmlFilesUnique.count)";
     Return $Return;
 };
 Function Get-FolderPermissionLocal { ## 

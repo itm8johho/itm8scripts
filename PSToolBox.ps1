@@ -462,16 +462,16 @@ Function Get-HotFixInstallDatesDomain { ### Get-HotFixInstallDates for multiple 
           $fInstalledHotfixes | Add-Member -MemberType NoteProperty -Name "IPv4Address" -Value "$($fQueryComputer.IPv4Address)";
           $fInstalledHotfixes; 
         } catch {
-          Write-Host "      An error occurred within the Get-Hotfix command:"
+          Write-Host "`n      An error occurred within the Get-Hotfix command:"
           Write-Host "      $($_.ScriptStackTrace)"
-          Write-Host "    Trying with an Invoked Get-Hotfix command: "
+          Write-Host "`n      Querying Server: $($fQueryComputer.Name) with Invoked Get-Hotfix command: "
           try {
             $fInstalledHotfixes = Invoke-Command -scriptblock { Get-Hotfix | sort InstalledOn -Descending -Unique -ErrorAction SilentlyContinue | Select -First $USING:fHotfixInstallDates  | Select PSComputerName, Description, HotFixID, InstalledBy, InstalledOn;  } -computername $fQueryComputer.Name
             $fInstalledHotfixes | Add-Member -MemberType NoteProperty -Name "OperatingSystem" -Value "$($fQueryComputer.OperatingSystem)";
             $fInstalledHotfixes | Add-Member -MemberType NoteProperty -Name "IPv4Address" -Value "$($fQueryComputer.IPv4Address)";
             $fInstalledHotfixes; 
           } catch {
-            Write-Host "      An error occurred within the Invoked Get-Hotfix command:"
+            Write-Host "`n      An error occurred within the Invoked Get-Hotfix command:"
             Write-Host "      $($_.ScriptStackTrace)`n"
             $fInstalledHotfixes = [pscustomobject]@{
               "PSComputerName" = "$($fQueryComputer.Name)"

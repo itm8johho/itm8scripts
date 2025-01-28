@@ -425,16 +425,16 @@ Function Get-HotFixInstallDatesLocal { ### Get-HotFixInstallDates for Local Comp
     );
   ## Script
     Show-Title "Get latest $($fHotfixInstallDates) HotFix Install Dates Local Computer/Server";
-    $fResult = Get-Hotfix | sort InstalledOn -Descending -Unique -ErrorAction SilentlyContinue | Select -First $fHotfixInstallDates | Select PSComputerName, Description, HotFixID, InstalledBy, InstalledOn;
+    $fResult = Get-Hotfix | sort InstalledOn -Descending -Unique -ErrorAction SilentlyContinue | Select -First $fHotfixInstallDates | Select PSComputerName, @{n='InstalledOn';e={Get-Date $_.InstalledOn -Format yyyy-MM-dd}}, InstalledBy, Description, HotFixID;
     $fResult | Add-Member -MemberType NoteProperty -Name "OperatingSystem" -Value "$((Get-ComputerInfo).WindowsProductName)";
     $fResult | Add-Member -MemberType NoteProperty -Name "IPv4Address" -Value "$((Get-NetIPAddress -AddressFamily IPv4 | ? {$_.IPAddress -notlike '127.0.0.1' }).IPAddress)";
   ## Output
-    #$fResult | sort MachineName, TimeGenerated | Select PSComputerName, InstalledOn, InstalledBy, Description, HotFixID, OperatingSystem, IPv4Address | FT -autosize;
+    #$fResult | sort MachineName, InstalledOn | Select PSComputerName, InstalledOn, InstalledBy, Description, HotFixID, OperatingSystem, IPv4Address | FT -autosize;
   ## Exports
-    If (($fExport -eq "Y") -or ($fExport -eq "YES")) { Export-CSVData -fFileNameText "$($fFileNameText)" -fCustomerName $fCustomerName -fExportData $($fResult | sort MachineName, TimeGenerated | Select PSComputerName, InstalledOn, InstalledBy, Description, HotFixID, OperatingSystem, IPv4Address) };
+    If (($fExport -eq "Y") -or ($fExport -eq "YES")) { Export-CSVData -fFileNameText "$($fFileNameText)" -fCustomerName $fCustomerName -fExportData $($fResult | sort MachineName, InstalledOn | Select PSComputerName, InstalledOn, InstalledBy, Description, HotFixID, OperatingSystem, IPv4Address) };
   ## Return
     [hashtable]$Return = @{};
-    $Return.HotFixInstallDates = $fResult | sort MachineName, TimeGenerated | Select PSComputerName, InstalledOn, InstalledBy, Description, HotFixID, OperatingSystem, IPv4Address;
+    $Return.HotFixInstallDates = $fResult | sort MachineName, InstalledOn | Select PSComputerName, InstalledOn, InstalledBy, Description, HotFixID, OperatingSystem, IPv4Address;
     Return $Return;
 };
 Function Get-HotFixInstallDatesDomain { ### Get-HotFixInstallDates for multiple Domain servers
@@ -451,13 +451,13 @@ Function Get-HotFixInstallDatesDomain { ### Get-HotFixInstallDates for multiple 
     $fResult = @(); $fResult = Foreach ($fQueryComputer in $fQueryComputers) {
       Write-Host "  Querying Server: $($fQueryComputer.Name)";
       IF ($fQueryComputer.Name -eq $Env:COMPUTERNAME) {
-        $fInstalledHotfixes = Get-Hotfix | sort InstalledOn -Descending -Unique -ErrorAction SilentlyContinue | Select -First $fHotfixInstallDates | Select PSComputerName, Description, HotFixID, InstalledBy, InstalledOn;
+        $fInstalledHotfixes = Get-Hotfix | sort InstalledOn -Descending -Unique -ErrorAction SilentlyContinue | Select -First $fHotfixInstallDates | Select PSComputerName, @{n='InstalledOn';e={Get-Date $_.InstalledOn -Format yyyy-MM-dd}}, InstalledBy, Description, HotFixID;
         $fInstalledHotfixes | Add-Member -MemberType NoteProperty -Name "OperatingSystem" -Value "$((Get-ComputerInfo).WindowsProductName)";
         $fInstalledHotfixes | Add-Member -MemberType NoteProperty -Name "IPv4Address" -Value "$((Get-NetIPAddress -AddressFamily IPv4 | ? {$_.IPAddress -notlike '127.0.0.1' }).IPAddress)";
         $fInstalledHotfixes; 
       } Else {
         try {
-          $fInstalledHotfixes = Get-Hotfix -ComputerName $fQueryComputer.Name | sort InstalledOn -Descending -Unique -ErrorAction SilentlyContinue | Select -First $fHotfixInstallDates | Select PSComputerName, Description, HotFixID, InstalledBy, InstalledOn;
+          $fInstalledHotfixes = Get-Hotfix -ComputerName $fQueryComputer.Name | sort InstalledOn -Descending -Unique -ErrorAction SilentlyContinue | Select -First $fHotfixInstallDates | Select PSComputerName, @{n='InstalledOn';e={Get-Date $_.InstalledOn -Format yyyy-MM-dd}}, InstalledBy, Description, HotFixID;
           $fInstalledHotfixes | Add-Member -MemberType NoteProperty -Name "OperatingSystem" -Value "$($fQueryComputer.OperatingSystem)";
           $fInstalledHotfixes | Add-Member -MemberType NoteProperty -Name "IPv4Address" -Value "$($fQueryComputer.IPv4Address)";
           $fInstalledHotfixes; 
@@ -467,41 +467,41 @@ Function Get-HotFixInstallDatesDomain { ### Get-HotFixInstallDates for multiple 
           Write-Host "      Querying Server: $($fQueryComputer.Name) with Invoked Get-Hotfix command: "
           try {
             IF (Test-Connection -computername $fQueryComputer.Name -Quiet -Count 1) {
-              $fInstalledHotfixes = Invoke-Command -scriptblock { Get-Hotfix | sort InstalledOn -Descending -Unique -ErrorAction SilentlyContinue | Select -First $USING:fHotfixInstallDates  | Select PSComputerName, Description, HotFixID, InstalledBy, InstalledOn;  } -computername $fQueryComputer.Name
+              $fInstalledHotfixes = Invoke-Command -scriptblock { Get-Hotfix | sort InstalledOn -Descending -Unique -ErrorAction SilentlyContinue | Select -First $USING:fHotfixInstallDates  | Select PSComputerName, @{n='InstalledOn';e={Get-Date $_.InstalledOn -Format yyyy-MM-dd}}, InstalledBy, Description, HotFixID;  } -computername $fQueryComputer.Name
               $fInstalledHotfixes | Add-Member -MemberType NoteProperty -Name "OperatingSystem" -Value "$($fQueryComputer.OperatingSystem)";
               $fInstalledHotfixes | Add-Member -MemberType NoteProperty -Name "IPv4Address" -Value "$($fQueryComputer.IPv4Address)";
               $fInstalledHotfixes; 
 			} Else {
-              $fInstalledHotfixes = [pscustomobject]@{
+              $fInstalledHotfixes = [pscustomobject][Ordered]@{
                 "PSComputerName" = "$($fQueryComputer.Name)"
-                "Description" = ""
-                "HotFixID" = ""
-                "InstalledBy" = ""
                 "InstalledOn" = ""
-                "IPv4Address" = "$($fQueryComputer.IPv4Address)"
+                "InstalledBy" = ""
+                "HotFixID" = ""
+                "Description" = ""
                 "OperatingSystem" = "$($fQueryComputer.OperatingSystem)"};
+                "IPv4Address" = "$($fQueryComputer.IPv4Address)"
               $fInstalledHotfixes; 
             };				
           } catch {
             Write-Host "      An error occurred within the Invoked Get-Hotfix command:"
             Write-Host "      $($_.ScriptStackTrace)`n"
-            $fInstalledHotfixes = [pscustomobject]@{
+            $fInstalledHotfixes = [pscustomobject][Ordered]@{
               "PSComputerName" = "$($fQueryComputer.Name)"
+              "InstalledOn" = ""
+              "InstalledBy" = ""
               "Description" = ""
               "HotFixID" = ""
-              "InstalledBy" = ""
-              "InstalledOn" = ""
-              "IPv4Address" = "$($fQueryComputer.IPv4Address)"
               "OperatingSystem" = "$($fQueryComputer.OperatingSystem)"};
+              "IPv4Address" = "$($fQueryComputer.IPv4Address)"
             $fInstalledHotfixes; 
     }}}};
   ## Output
-    #$fResult | sort MachineName, TimeGenerated | Select PSComputerName, InstalledOn, InstalledBy, Description, HotFixID, OperatingSystem, IPv4Address | FT -autosize;
+    #$fResult | sort PSComputerName, InstalledOn | Select PSComputerName, InstalledOn, InstalledBy, Description, HotFixID, OperatingSystem, IPv4Address | FT -autosize;
   ## Exports
     If (($fExport -eq "Y") -or ($fExport -eq "YES")) { Export-CSVData -fFileNameText "$($fFileNameText)" -fCustomerName $fCustomerName -fExportData $($fResult | sort PSComputerName | Select PSComputerName, InstalledOn, InstalledBy, Description, HotFixID, OperatingSystem, IPv4Address) };
   ## Return
     [hashtable]$Return = @{};
-    $Return.HotFixInstallDates = $fResult | sort PSComputerName | Select PSComputerName, InstalledOn, InstalledBy, Description, HotFixID, OperatingSystem, IPv4Address;
+    $Return.HotFixInstallDates = $fResult | sort PSComputerName, InstalledOn | Select PSComputerName, InstalledOn, InstalledBy, Description, HotFixID, OperatingSystem, IPv4Address;
     Return $Return;
 };
 Function Get-HotFixInstalledLocal { ### Get-HotFixInstalled on Local Computer/Server
@@ -512,16 +512,16 @@ Function Get-HotFixInstalledLocal { ### Get-HotFixInstalled on Local Computer/Se
     );
   ## Script
     Show-Title "Get Installed HotFixes for latest $($fHotfixInstallDays) days on Local Computer/Server";
-    $fResult = Get-Hotfix | sort InstalledOn -Descending -ErrorAction SilentlyContinue | ? { $_.InstalledOn -gt $((Get-Date "0:00").adddays(-$($fHotfixInstallDays)))} | Select PSComputerName, Description, HotFixID, InstalledBy, InstalledOn;
+    $fResult = Get-Hotfix | sort InstalledOn -Descending -ErrorAction SilentlyContinue | ? { $_.InstalledOn -gt $((Get-Date "0:00").adddays(-$($fHotfixInstallDays)))} | Select PSComputerName, @{n='InstalledOn';e={Get-Date $_.InstalledOn -Format yyyy-MM-dd}}, InstalledBy, Description, HotFixID;
     $fResult | Add-Member -MemberType NoteProperty -Name "OperatingSystem" -Value "$((Get-ComputerInfo).WindowsProductName)";
     $fResult | Add-Member -MemberType NoteProperty -Name "IPv4Address" -Value "$((Get-NetIPAddress -AddressFamily IPv4 | ? {$_.IPAddress -notlike '127.0.0.1' }).IPAddress)";
   ## Output
-    #$fResult | sort InstalledBy, HotFixID -Descending | Select PSComputerName, InstalledOn, InstalledBy, Description, HotFixID, OperatingSystem, IPv4Address | FT -autosize;
+    #$fResult | sort InstalledOn, HotFixID -Descending | Select PSComputerName, InstalledOn, InstalledBy, Description, HotFixID, OperatingSystem, IPv4Address | FT -autosize;
   ## Exports
-    If (($fExport -eq "Y") -or ($fExport -eq "YES")) { Export-CSVData -fFileNameText "$($fFileNameText)" -fCustomerName $fCustomerName -fExportData $($fResult | sort MachineName, TimeGenerated | Select PSComputerName, InstalledOn, InstalledBy, Description, HotFixID, OperatingSystem, IPv4Address) };
+    If (($fExport -eq "Y") -or ($fExport -eq "YES")) { Export-CSVData -fFileNameText "$($fFileNameText)" -fCustomerName $fCustomerName -fExportData $($fResult | sort MachineName, InstalledOn | Select PSComputerName, InstalledOn, InstalledBy, Description, HotFixID, OperatingSystem, IPv4Address) };
   ## Return
     [hashtable]$Return = @{};
-    $Return.HotFixInstalled = $fResult | sort InstalledBy, HotFixID -Descending | Select PSComputerName, InstalledOn, InstalledBy, Description, HotFixID, OperatingSystem, IPv4Address;
+    $Return.HotFixInstalled = $fResult | sort InstalledOn, HotFixID -Descending | Select PSComputerName, InstalledOn, InstalledBy, Description, HotFixID, OperatingSystem, IPv4Address;
     Return $Return;
   ## $Result = Get-HotFixInstalledLocal; $Result.HotFixInstalled | FT -Autosize;
 };

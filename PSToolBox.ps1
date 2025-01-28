@@ -467,32 +467,32 @@ Function Get-HotFixInstallDatesDomain { ### Get-HotFixInstallDates for multiple 
           Write-Host "      Querying Server: $($fQueryComputer.Name) with Invoked Get-Hotfix command: "
           try {
             IF (Test-Connection -computername $fQueryComputer.Name -Quiet -Count 1) {
-              $fInstalledHotfixes = Invoke-Command -scriptblock { Get-Hotfix | sort InstalledOn -Descending -Unique -ErrorAction SilentlyContinue | Select -First $USING:fHotfixInstallDates  | Select PSComputerName, @{n='InstalledOn';e={Get-Date $_.InstalledOn -Format yyyy-MM-dd}}, InstalledBy, Description, HotFixID;  } -computername $fQueryComputer.Name
+              $fInstalledHotfixes = Invoke-Command -scriptblock { Get-Hotfix | sort InstalledOn -Descending -Unique -ErrorAction SilentlyContinue | Select -First $USING:fHotfixInstallDates | Select PSComputerName, @{n='InstalledOn';e={Get-Date $_.InstalledOn -Format yyyy-MM-dd}}, InstalledBy, Description, HotFixID;} -computername $fQueryComputer.Name;
               $fInstalledHotfixes | Add-Member -MemberType NoteProperty -Name "OperatingSystem" -Value "$($fQueryComputer.OperatingSystem)";
               $fInstalledHotfixes | Add-Member -MemberType NoteProperty -Name "IPv4Address" -Value "$($fQueryComputer.IPv4Address)";
               $fInstalledHotfixes; 
 			} Else {
               $fInstalledHotfixes = [pscustomobject][Ordered]@{
-                "PSComputerName" = "$($fQueryComputer.Name)"
-                "InstalledOn" = ""
-                "InstalledBy" = ""
-                "HotFixID" = ""
-                "Description" = ""
-                "OperatingSystem" = "$($fQueryComputer.OperatingSystem)"};
-                "IPv4Address" = "$($fQueryComputer.IPv4Address)"
+                "PSComputerName" = "$($fQueryComputer.Name)";
+                "InstalledOn" = "";
+                "InstalledBy" = "";
+                "HotFixID" = "";
+                "Description" = "";
+                "OperatingSystem" = "$($fQueryComputer.OperatingSystem)";
+                "IPv4Address" = "$($fQueryComputer.IPv4Address)"};
               $fInstalledHotfixes; 
             };				
           } catch {
             Write-Host "      An error occurred within the Invoked Get-Hotfix command:"
             Write-Host "      $($_.ScriptStackTrace)`n"
             $fInstalledHotfixes = [pscustomobject][Ordered]@{
-              "PSComputerName" = "$($fQueryComputer.Name)"
-              "InstalledOn" = ""
-              "InstalledBy" = ""
-              "Description" = ""
-              "HotFixID" = ""
-              "OperatingSystem" = "$($fQueryComputer.OperatingSystem)"};
-              "IPv4Address" = "$($fQueryComputer.IPv4Address)"
+              "PSComputerName" = "$($fQueryComputer.Name)";
+              "InstalledOn" = "";
+              "InstalledBy" = "";
+              "Description" = "";
+              "HotFixID" = "";
+              "OperatingSystem" = "$($fQueryComputer.OperatingSystem)";
+              "IPv4Address" = "$($fQueryComputer.IPv4Address)"};
             $fInstalledHotfixes; 
     }}}};
   ## Output

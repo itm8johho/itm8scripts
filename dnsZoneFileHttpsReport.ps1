@@ -12,7 +12,8 @@ NAV porte
 $SSLPorts = @("443", "444", "8443", "8444", "10443", "10444"); # $SSLPorts-functionallity Added 2025-04-05 /JOHHO
 
 $ThisDomain = $null
-$PSScriptRoot = Split-Path -Parent $($MyInvocation.MyCommand.Path); # JOHHO/ verified issue with Path: $($MyInvocation.MyCommand.Path)
+# $PSScriptRoot = Split-Path -Parent $($MyInvocation.MyCommand.Path); # JOHHO/ verified issue with Path: $($MyInvocation.MyCommand.Path)
+$PSScriptRoot = (Get-Location).path; # 2025-04-05 /JOHHO
 ## Functions
 Function Lookup-SSLCerts {
   param ($fDomains, $fThisDomain, $fSSLPorts)

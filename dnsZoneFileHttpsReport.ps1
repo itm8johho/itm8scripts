@@ -465,7 +465,7 @@ $formattetResult = $results | Sort ComputerName -Descending | Select-Object @{Na
 
 $ReportName = "$($ThisDomain)_$(Get-Date -f yyyy-MM-dd-HHmmss)"
 
-$formattetResult | Export-Csv -Delimiter ";" -Path "$PSScriptRoot\Reports\$ReportName.csv"
+$formattetResult | Export-Csv -Delimiter ";" -Path "$PSScriptRoot\$ReportName.csv"
 
 #HTML REPORT GENERATION
 $DNSservers = Get-DnsClientServerAddress -AddressFamily IPv4 | Select-Object -ExpandProperty ServerAddresses
@@ -1135,7 +1135,7 @@ $layout = @"
 "@
 
 #Generate complete report
-$Report | ConvertTo-Html -Body "$layout" -Title "SSL Scanner Report" -Head $header | Out-File -FilePath "$PSScriptRoot\Reports\$($ReportName).html"
-Start-Process "$PSScriptRoot\Reports\$($ReportName).html"
+$Report | ConvertTo-Html -Body "$layout" -Title "SSL Scanner Report" -Head $header | Out-File -FilePath "$PSScriptRoot\$($ReportName).html"
+Start-Process "$PSScriptRoot\$($ReportName).html"
 
 #$results | Select-Object ResolvedIPAddress,@{Name="Hostname"; Expression={$_.ComputerName}},@{Name="Port"; Expression={$_.Port}},Valid,Response,SignatureAlgorithm,Thumbprint,SubjectName,SubjectAlternativeName,IssuerName,NotBefore,NotAfter,DnsNameList,Verify,MatchesHostname,tls,Ssl2,Ssl3,Tls11,Tls12,Tls13

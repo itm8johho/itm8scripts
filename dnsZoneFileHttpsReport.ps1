@@ -277,8 +277,7 @@ Function Lookup-SSLCerts {
   Show-JobStatus "LookUpDomain_";
   $fResults = Foreach ($fJob in (Get-Job -Name "LookUpDomain_*")) {Receive-Job -id $fJob.ID -Keep}; Get-Job -State Completed | Remove-Job;
   
-  $Timer01.Stop()
-  $Timer01.Elapsed
+  $Timer01.Stop(); # $Timer01.Elapsed
   Write-Host "`n  Elapsed time for Function Lookup-SSLCerts: $($Timer01.Elapsed)`n";
 
   Return $fResults

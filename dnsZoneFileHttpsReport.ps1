@@ -1,5 +1,6 @@
 Add-Type -AssemblyName System.Windows.Forms
 
+### Variables
 <#
 NAV porte
 7046
@@ -9,11 +10,10 @@ NAV porte
 8146
 #>
 
-$SSLPorts = @("443", "444", "8443", "8444", "9443", "9444", "10443", "10444", "7046", "7047", "7048", "8145", "8146"); # $SSLPorts-functionallity Added 2025-04-05 /JOHHO
-
+$SSLPorts = @("443", "444", "8443", "8444", "9443", "9444", "10443", "10444", "7046", "7047", "7048", "8145", "8146"); # $SSLPorts-functionallity Added 2025-05-04 /JOHHO
 # $PSScriptRoot = Split-Path -Parent $($MyInvocation.MyCommand.Path); # JOHHO/ verified issue with Path: $($MyInvocation.MyCommand.Path)
-# $PSScriptRoot = (Get-Location).path; # 2025-04-05 /JOHHO
-$Paths = @("C:\itm8", "C:\ITR", "$([Environment]::GetFolderPath("Desktop"))"); # 2025-04-06 /JOHHO
+# $PSScriptRoot = (Get-Location).path; # 2025-05-04 /JOHHO
+$Paths = @("C:\itm8", "C:\ITR", "$([Environment]::GetFolderPath("Desktop"))"); # 2025-05-06 /JOHHO
 #
 ### Script
 $ThisDomain = $null
@@ -29,12 +29,15 @@ Function Lookup-SSLCerts {
   param ($fDomains, $fThisDomain, $fSSLPorts)
   $Timer01 = [System.Diagnostics.Stopwatch]::StartNew() #TIMER
   $results = {};
-  ForEach ($Domain in $fDomains) { # 2025-04-05 /JOHHO
+  Write-Host "`n  Starting SSLCert-lookup for: $(($fDomains).count) DNS-Records/Domains`n";
+  ForEach ($Domain in $fDomains) { # 2025-05-04 /JOHHO
     [Array]$ArgumentList = @($Domain, $fThisDomain, $fSSLPorts)
     $ScriptBlock11 = {
       param ($Domain, $ThisDomain, $SSLPorts)
-      Write-Host "`n  HostName:   $($Domain.Hostname)";
-      Write-Host "  ThisDomain: $($ThisDomain)";
+      $DisplayAllInfo = $false;
+	  #$DisplayAllInfo = $true;
+      IF ($DisplayAllInfo -eq $true) {Write-Host "`n  HostName:   $($Domain.Hostname)";}
+      IF ($DisplayAllInfo -eq $true) {Write-Host "  ThisDomain: $($ThisDomain)";}
       ## ScriptBlock Functions
       Function Test-Port {
           [CmdletBinding()]
@@ -106,7 +109,7 @@ Function Lookup-SSLCerts {
               [int] $TimeOut = 1000 # In miliseconds!
           )
           begin {
-            Write-Host "  -- Testing DNS and Port: $($ComputerName):$($Port)"; # /JOHHO
+            IF ($DisplayAllInfo -eq $true) {Write-Host "  -- Testing DNS and Port: $($ComputerName):$($Port)";}; # /JOHHO
               $fTimer01 = [System.Diagnostics.Stopwatch]::StartNew()
               $queue = [System.Collections.Generic.List[hashtable]]::new() #[List[hashtable]]::new()
               #$TimeOut = [timespan]::FromSeconds($TimeOut).TotalMilliseconds
@@ -267,19 +270,22 @@ Function Lookup-SSLCerts {
         $Domain.Hostname = "ANY." + ($Domain.Hostname).Replace('*.', '')
       }
       $Openports = ForEach ($Port in $SSLPorts) {if ((($result = (Test-Port $($Domain.Hostname) $Port)).PortOpened) -eq $true) {$result.RemotePort}};
-      Write-Host "  Open Ports: $($Openports)";
+      IF ($DisplayAllInfo -eq $true) {Write-Host "  Open Ports: $($Openports)"; }
       $ReturnResult = ForEach ($Port in $Openports) {Test-TCPConnectionAsync -Target $Domain.Hostname -ExpectedIP $Domain.IP -Port $Port -TimeOut 500};
       return $ReturnResult;
     } 
     $JobResult = Start-Job -Scriptblock $ScriptBlock11 -ArgumentList $ArgumentList -Name "LookUpDomain_$($Domain.Hostname)";
+	IF ($DisplayAllInfo -eq $true) {$Jobs = Get-Job -Name "LookUpDomain_*"; Write-Host "Jobs Running: $(($Jobs  | ? {($_.State -eq "Running")}).count) - Completed: $(($Jobs  | ? {($_.State -eq "Completed")}).count) - Failed: $(($Jobs  | ? {($_.State -eq "Failed")}).count)";};
+    $ThrottleLimit = 15; While (((Get-Job -Name "LookUpDomain_*" | ? {($_.State -eq "Running")}).count) -ge $ThrottleLimit ){Start-Sleep 1; }; # Thread Throttleling function - $ThrottleLimit NOT above 16 / JOHHO
+
   }
   
   Show-JobStatus "LookUpDomain_";
   $fResults = Foreach ($fJob in (Get-Job -Name "LookUpDomain_*")) {Receive-Job -id $fJob.ID -Keep}; Get-Job -State Completed | Remove-Job;
   
-  $Timer01.Stop(); # $Timer01.Elapsed
+  $Timer01.Stop();
   Write-Host "`n  Elapsed time for Function Lookup-SSLCerts: $($Timer01.Elapsed)`n";
-
+  # Return Data
   Return $fResults
 }; # END Function Lookup-SSLCerts
 Function Show-JobStatus { Param ($fJobNamePrefix)
@@ -450,8 +456,8 @@ if (($dnsZoneContentFirst10 | Out-String) -match '^A\s+Host:\s+') {
     }
   }
 }
-write-host "`n  Domains:"
-$Domains
+#write-host "`n  Domains:"
+#$Domains
 if (-not $Domains) {
   exit;
 }
@@ -464,7 +470,8 @@ $formattetResult = $results | Sort ComputerName -Descending | Select-Object @{Na
 
 $ReportName = "$($ThisDomain)_$(Get-Date -f yyyy-MM-dd-HHmmss)"
 
-$formattetResult | Export-Csv -Delimiter ";" -Path "$PSScriptRoot\$ReportName.csv"
+# $formattetResult | Export-Csv -Delimiter ";" -Path "$PSScriptRoot\Reports\$ReportName.csv"
+$formattetResult | Export-Csv -Delimiter ";" -Path "$PSScriptRoot\$ReportName.csv"; # 2025-05-07 /JOHHO
 
 #HTML REPORT GENERATION
 $DNSservers = Get-DnsClientServerAddress -AddressFamily IPv4 | Select-Object -ExpandProperty ServerAddresses
@@ -1134,7 +1141,8 @@ $layout = @"
 "@
 
 #Generate complete report
-$Report | ConvertTo-Html -Body "$layout" -Title "SSL Scanner Report" -Head $header | Out-File -FilePath "$PSScriptRoot\$($ReportName).html"
-Start-Process "$PSScriptRoot\$($ReportName).html"
+#$Report | ConvertTo-Html -Body "$layout" -Title "SSL Scanner Report" -Head $header | Out-File -FilePath "$PSScriptRoot\Reports\$($ReportName).html";
+$Report | ConvertTo-Html -Body "$layout" -Title "SSL Scanner Report" -Head $header | Out-File -FilePath "$PSScriptRoot\$($ReportName).html"; # 2025-05-07 /JOHHO
+Start-Process "$PSScriptRoot\$($ReportName).html"; # 2025-05-07 /JOHHO
 
 #$results | Select-Object ResolvedIPAddress,@{Name="Hostname"; Expression={$_.ComputerName}},@{Name="Port"; Expression={$_.Port}},Valid,Response,SignatureAlgorithm,Thumbprint,SubjectName,SubjectAlternativeName,IssuerName,NotBefore,NotAfter,DnsNameList,Verify,MatchesHostname,tls,Ssl2,Ssl3,Tls11,Tls12,Tls13

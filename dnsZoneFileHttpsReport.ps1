@@ -1,6 +1,5 @@
-Add-Type -AssemblyName System.Windows.Forms
+### Lookup SSL Certificates - By  John Holst (JOHHO) and Bjarke Frost Stabell (BJFST), ITM8
 
-### Variables
 <#
 SSL Ports:
 443
@@ -20,17 +19,19 @@ NAV ports:
 8146
 #>
 
+### Variables
 $SSLPorts = @("443", "444", "8443", "8444", "9443", "9444", "10443", "10444", "7046", "7047", "7048", "8145", "8146"); # $SSLPorts-functionallity Added 2025-05-04 /JOHHO
 $Paths = @("C:\itm8", "C:\ITR", "$([Environment]::GetFolderPath("Desktop"))"); # 2025-05-06 /JOHHO
 $ScriptTerminationSleep = 30;
 #
 ### Script
+$ThisDomain = $null
 $SupportedOS = IF (!((((Get-WmiObject -class Win32_OperatingSystem).Caption) -notlike "*Server 2016*") -and ((([Environment]::OSVersion).version) -ge [Version]‘10.0.0.0’) )) {
   Write-Host "`n  Os is not supported to run from Github!`n  -- Run a local version of this script --`n`n  Script will terminate!`n";
   Sleep $ScriptTerminationSleep;
   Break;};
-
-$ThisDomain = $null
+## Add system functions
+Add-Type -AssemblyName System.Windows.Forms
 # $PSScriptRoot = Split-Path -Parent $($MyInvocation.MyCommand.Path); # 2025-03-31 JOHHO/ verified issue with Path: $($MyInvocation.MyCommand.Path)
 # $PSScriptRoot = (Get-Location).path; # 2025-05-04 /JOHHO
 Foreach ($Path in $Paths) { # Verify and create Folder: Cert-Reports - 2025-05-06 /JOHHO

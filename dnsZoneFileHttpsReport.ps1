@@ -21,20 +21,19 @@ NAV ports:
 #>
 
 $SSLPorts = @("443", "444", "8443", "8444", "9443", "9444", "10443", "10444", "7046", "7047", "7048", "8145", "8146"); # $SSLPorts-functionallity Added 2025-05-04 /JOHHO
-# $PSScriptRoot = Split-Path -Parent $($MyInvocation.MyCommand.Path); # JOHHO/ verified issue with Path: $($MyInvocation.MyCommand.Path)
-# $PSScriptRoot = (Get-Location).path; # 2025-05-04 /JOHHO
 $Paths = @("C:\itm8", "C:\ITR", "$([Environment]::GetFolderPath("Desktop"))"); # 2025-05-06 /JOHHO
 $ScriptTerminationSleep = 30;
 #
 ### Script
-Write-Host "`n  $MyInvocation.MyCommand.name"
 $SupportedOS = IF (!((((Get-WmiObject -class Win32_OperatingSystem).Caption) -notlike "*Server 2016*") -and ((([Environment]::OSVersion).version) -ge [Version]‘10.0.0.0’) )) {
   Write-Host "`n  Os is not supported to run from Github!`n  -- Run a local version of this script --`n`n  Script will terminate!`n";
   Sleep $ScriptTerminationSleep;
   Break;};
 
 $ThisDomain = $null
-Foreach ($Path in $Paths) { # Verify and create Folder: Cert-Reports
+# $PSScriptRoot = Split-Path -Parent $($MyInvocation.MyCommand.Path); # 2025-03-31 JOHHO/ verified issue with Path: $($MyInvocation.MyCommand.Path)
+# $PSScriptRoot = (Get-Location).path; # 2025-05-04 /JOHHO
+Foreach ($Path in $Paths) { # Verify and create Folder: Cert-Reports - 2025-05-06 /JOHHO
   If (Test-Path $Path) {
     If (!(Test-Path "$($Path)\Cert-Reports")){ New-Item -Path "$($Path)\Cert-Reports" -ItemType Directory -force | Out-Null; };
     $PSScriptRoot = "$($Path)\Cert-Reports";

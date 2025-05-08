@@ -2,7 +2,17 @@ Add-Type -AssemblyName System.Windows.Forms
 
 ### Variables
 <#
-NAV porte
+SSL Ports:
+443
+444
+8443
+8444
+9443
+9444
+10443
+10444
+
+NAV ports: 
 7046
 7047 - Web services default port
 7048
@@ -14,8 +24,15 @@ $SSLPorts = @("443", "444", "8443", "8444", "9443", "9444", "10443", "10444", "7
 # $PSScriptRoot = Split-Path -Parent $($MyInvocation.MyCommand.Path); # JOHHO/ verified issue with Path: $($MyInvocation.MyCommand.Path)
 # $PSScriptRoot = (Get-Location).path; # 2025-05-04 /JOHHO
 $Paths = @("C:\itm8", "C:\ITR", "$([Environment]::GetFolderPath("Desktop"))"); # 2025-05-06 /JOHHO
+$ScriptTerminationSleep = 30;
 #
 ### Script
+$MyInvocation.MyCommand.name
+$SupportedOS = IF (!((((Get-WmiObject -class Win32_OperatingSystem).Caption) -notlike "*Server 2016*") -and ((([Environment]::OSVersion).version) -ge [Version]‘10.0.0.0’) )) {
+  Write-Host "`n  Os is not supported to run from Github!`n  -- Run a local version of this script --`n`n  Script will terminate!`n";
+  Sleep $ScriptTerminationSleep;
+  Break;};
+
 $ThisDomain = $null
 Foreach ($Path in $Paths) { # Verify and create Folder: Cert-Reports
   If (Test-Path $Path) {
@@ -427,7 +444,9 @@ if ($res -eq 'OK') {
 }
 
 if (-not $ThisDomain) {
-  exit
+  Write-Host "`n  No Domain-selection registered!`n`n  Script will terminate!`n";
+  Sleep $ScriptTerminationSleep;
+  Break
 }
 $Domains = @()
 $dnsZoneContentParsed = @()
@@ -459,7 +478,9 @@ if (($dnsZoneContentFirst10 | Out-String) -match '^A\s+Host:\s+') {
 #write-host "`n  Domains:"
 #$Domains
 if (-not $Domains) {
-  exit;
+  Write-Host "`n  No DNS-Records/Domains registered!`n`n  Script will terminate!`n";
+  Sleep $ScriptTerminationSleep;
+  Break;
 }
 
 ## Lookup-SSLCerts

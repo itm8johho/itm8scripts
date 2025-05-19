@@ -627,6 +627,7 @@ Function Get-NetAdapterInfoDomain {
     } Else {
       Invoke-Command -ComputerName $fQueryComputer.name -ScriptBlock $fNetAdapterScriptBlock01 | Select ComputerName, InterfaceAlias, IPAdresses, DHCP, DNSServers;
     };
+  };
  ## Output
     $fResult | Sort ComputerName, InterfaceAlias;
   ## Exports

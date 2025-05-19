@@ -593,22 +593,40 @@ Function Get-NetAdapterInfoDomain {
     $fCustomerName = $(Get-CustomerName),
     $fQueryComputers = $(Get-QueryComputers),
     $fExport = ("Yes" | %{ If($Entry = Read-Host "  Export result to file ( Y/N - Default: $_ )"){$Entry} Else {$_} }),
-    $fFileNameText = "ServiceRunning"
+    $fFileNameText = "NetAdapterInfoDomain"
   );
+  Show-Title "Get NetAdapterInfoDomain multiple Domain Servers";
   $fNetAdapterScriptBlock01 = { $NetAdapter = Get-NetAdapter -Name *
-    $fIPAdresses = $NetAdapter | Get-NetIPAddress -AddressFamily IPv4 | Select InterfaceAlias, IPAddress;
-    $fDNSServers = $NetAdapter | Get-DnsClientServerAddress -AddressFamily IPV4 | select -Property InterfaceAlias, ServerAddresses;
+    $fIPAdresses = $NetAdapter | Get-NetIPAddress -AddressFamily IPv4  -ErrorAction SilentlyContinue | Select InterfaceAlias, IPAddress;
+    $fDNSServers = $NetAdapter | Get-DnsClientServerAddress -AddressFamily IPV4  -ErrorAction SilentlyContinue | select -Property InterfaceAlias, ServerAddresses;
     $fNetAdapterInfo = [pscustomobject][Ordered]@{
       "ComputerName" = $ENV:ComputerName;
       "InterfaceAlias" = $fIPAdresses.InterfaceAlias;
       "IPAdresses" = $fIPAdresses.IPAddress;
+	  "DHCP" = $fIPAdresses.PrefixOrigin;
       "DNSServers" = $fDNSServers.ServerAddresses;
     };
-  $fNetAdapterInfo;
+    $fNetAdapterInfo;
   };
-  $fResult = ForEach ($fQueryComputer in $fQueryComputers) {
-   Invoke-Command -ComputerName $fQueryComputer.name -ScriptBlock $fNetAdapterScriptBlock01 | Select ComputerName, InterfaceAlias, IPAdresses, DNSServers;
+  $fNetAdapterScriptBlockLocal01 = { $NetAdapter = Get-NetAdapter -Name *
+    $fIPAdresses = $NetAdapter | Get-NetIPAddress -AddressFamily IPv4  -ErrorAction SilentlyContinue | Select InterfaceAlias, IPAddress;
+    $fDNSServers = $NetAdapter | Get-DnsClientServerAddress -AddressFamily IPV4  -ErrorAction SilentlyContinue | select -Property InterfaceAlias, ServerAddresses;
+    $fNetAdapterInfo = [pscustomobject][Ordered]@{
+      "ComputerName" = $ENV:ComputerName;
+      "InterfaceAlias" = $fIPAdresses.InterfaceAlias;
+      "IPAdresses" = $fIPAdresses.IPAddress;
+	  "DHCP" = $fIPAdresses.PrefixOrigin;
+      "DNSServers" = $fDNSServers.ServerAddresses;
+    };
+    $fNetAdapterInfo;
   };
+    $fResult = @(); $fResult = Foreach ($fQueryComputer in $fQueryComputers) {
+     Write-Host "  Querying Server: $($fQueryComputer.Name)";
+    IF ($fQueryComputer.Name -eq $Env:COMPUTERNAME) {
+      Invoke-Command -ScriptBlock $fNetAdapterScriptBlockLocal01 | Select ComputerName, InterfaceAlias, IPAdresses, DHCP, DNSServers;
+    } Else {
+      Invoke-Command -ComputerName $fQueryComputer.name -ScriptBlock $fNetAdapterScriptBlock01 | Select ComputerName, InterfaceAlias, IPAdresses, DHCP, DNSServers;
+    };
  ## Output
     $fResult | Sort ComputerName, InterfaceAlias;
   ## Exports

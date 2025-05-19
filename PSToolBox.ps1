@@ -91,6 +91,8 @@ Function Show-Menu {
   #Write-Host "  Press '24' for Get - on Local Computer/Server.";
   Write-Host "  Press '25' for Get ExpiredCertificates for Local Server.";
   If ($DomainQueryEnabled -eq $True) {Write-Host "  Press '26' for Get ExpiredCertificates for Domain Servers."};
+  If ($DomainQueryEnabled -eq $True) {Write-Host "  Press '28' for Get IP- and DNS Server-Addresses  for Domain Servers."};
+
   Write-Host "  "
   Write-Host "  Press '31' for Get FolderPermission for Local Computer/Server.";
   If ($DomainQueryEnabled -eq $True) {Write-Host "  Press '32' for Get TimeSyncStatus for Domain Servers."};
@@ -153,6 +155,11 @@ Function ToolboxMenu {
       "26" { "`n`n  You selected: Get ExpiredCertificates for Domain Servers`n"
           If ($DomainQueryEnabled -eq $True) {$Result = Get-ExpiredCertificatesDomain; $Result.ExpiredCertificates | FT -Autosize;} ELSE {$DomainQueryEnabledInfo}
           Pause;};
+
+      "28" { "`n`n  You selected: Get IP- and DNS-Server-Addresses for Domain Servers`n"
+          If ($DomainQueryEnabled -eq $True) {$Result = Get-NetAdapterInfoDomain; $Result.NetAdapterInfo | FT -Autosize;;} ELSE {$DomainQueryEnabledInfo}
+          Pause;};
+
       "31" { "`n`n  You selected: Get FolderPermission for Local Computer/Server`n"
 		  $Result = Get-FolderPermissionLocal; $Result.FolderPermission | FT -Autosize; $Result.FolderPermission_Level_01_02 | FT -Autosize;
           Pause;};
@@ -579,6 +586,36 @@ Function Get-ExpiredCertificatesDomain {## Get-Expired_Certificates
   ## Return
     [hashtable]$Return = @{};
     $Return.ExpiredCertificates = $fResult |  Sort PSComputerName, Expires, FriendlyName | Select PSComputerName, Expires, FriendlyName, Subject, ParentPath, Issuer, Thumbprint;
+    Return $Return;
+};
+Function Get-NetAdapterInfoDomain {
+  Param(
+    $fCustomerName = $(Get-CustomerName),
+    $fQueryComputers = $(Get-QueryComputers),
+    $fExport = ("Yes" | %{ If($Entry = Read-Host "  Export result to file ( Y/N - Default: $_ )"){$Entry} Else {$_} }),
+    $fFileNameText = "ServiceRunning"
+  );
+  $fNetAdapterScriptBlock01 = { $NetAdapter = Get-NetAdapter -Name *
+    $fIPAdresses = $NetAdapter | Get-NetIPAddress -AddressFamily IPv4 | Select InterfaceAlias, IPAddress;
+    $fDNSServers = $NetAdapter | Get-DnsClientServerAddress -AddressFamily IPV4 | select -Property InterfaceAlias, ServerAddresses;
+    $fNetAdapterInfo = [pscustomobject][Ordered]@{
+      "ComputerName" = $ENV:ComputerName;
+      "InterfaceAlias" = $fIPAdresses.InterfaceAlias;
+      "IPAdresses" = $fIPAdresses.IPAddress;
+      "DNSServers" = $fDNSServers.ServerAddresses;
+    };
+  $fNetAdapterInfo;
+  };
+  $fResult = ForEach ($fQueryComputer in $fQueryComputers) {
+   Invoke-Command -ComputerName $fQueryComputer.name -ScriptBlock $fNetAdapterScriptBlock01 | Select ComputerName, InterfaceAlias, IPAdresses, DNSServers;
+  };
+ ## Output
+    $fResult | Sort ComputerName, InterfaceAlias;
+  ## Exports
+    If (($fExport -eq "Y") -or ($fExport -eq "YES")) { Export-CSVData -fFileNameText "$($fFileNameText)" -fCustomerName $fCustomerName -fExportData $($fResult | Sort ComputerName, InterfaceAlias)};
+   ## Return
+    [hashtable]$Return = @{}; 
+    $Return.NetAdapterInfo = $fResult | Sort ComputerName, InterfaceAlias;
     Return $Return;
 };
 Function Get-TimeSyncStatusDomain {## Get TimeSync Status (Registry) - need an AD Server or Server with RSAT

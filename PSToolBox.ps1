@@ -588,46 +588,72 @@ Function Get-ExpiredCertificatesDomain {## Get-Expired_Certificates
     $Return.ExpiredCertificates = $fResult |  Sort PSComputerName, Expires, FriendlyName | Select PSComputerName, Expires, FriendlyName, Subject, ParentPath, Issuer, Thumbprint;
     Return $Return;
 };
-Function Get-NetAdapterInfoDomain {
+Function Get-NetAdapterInfo {
   Param(
     $fCustomerName = $(Get-CustomerName),
     $fQueryComputers = $(Get-QueryComputers),
     $fExport = ("Yes" | %{ If($Entry = Read-Host "  Export result to file ( Y/N - Default: $_ )"){$Entry} Else {$_} }),
-    $fFileNameText = "NetAdapterInfoDomain"
+    $fJobNamePrefix = "NetAdapterInfo_",
+    $fFileNameText = "NetAdapterInfo"
   );
-  Show-Title "Get NetAdapterInfoDomain multiple Domain Servers";
-  $fBlock01 = { $NetAdapter = Get-NetAdapter -Name *
-    $fIPAdresses = $NetAdapter | Get-NetIPAddress -AddressFamily IPv4  -ErrorAction SilentlyContinue | Select InterfaceAlias, IPAddress, PrefixOrigin;
-    $fDNSServers = $NetAdapter | Get-DnsClientServerAddress -AddressFamily IPV4  -ErrorAction SilentlyContinue | select -Property InterfaceAlias, ServerAddresses;
-    $fNetAdapterInfo = [pscustomobject][Ordered]@{
-      "ComputerName" = $ENV:ComputerName;
-      "InterfaceAlias" = $fIPAdresses.InterfaceAlias;
-      "IPAdresses" = $fIPAdresses.IPAddress;
-	  "DHCP" = $fIPAdresses.PrefixOrigin;
-      "DNSServers" = $fDNSServers.ServerAddresses;
+  ## Script
+    $fBlock01 = { $NetAdapter = Get-NetAdapter -Name *
+      $fIPAdresses = $NetAdapter | Get-NetIPAddress -AddressFamily IPv4 | Select InterfaceAlias, IPAddress, PrefixOrigin;
+      $fDNSServers = $NetAdapter | Get-DnsClientServerAddress -AddressFamily IPV4 | select -Property InterfaceAlias, ServerAddresses;
+      $fNetAdapterInfo = [pscustomobject][Ordered]@{
+        "ComputerName" = $ENV:ComputerName;
+        "DHCP" = $fIPAdresses.PrefixOrigin
+        "IPAdresses" = $fIPAdresses.IPAddress;
+        "DNSServers" = $fDNSServers.ServerAddresses;
+        "InterfaceAlias" = $fIPAdresses.InterfaceAlias;
+      };
+      $fNetAdapterInfo
     };
-    $fNetAdapterInfo;
-  };
-  $fLocalBlock01 = { $NetAdapter = Get-NetAdapter -Name *
-    $fIPAdresses = $NetAdapter | Get-NetIPAddress -AddressFamily IPv4  -ErrorAction SilentlyContinue | Select InterfaceAlias, IPAddress, PrefixOrigin;
-    $fDNSServers = $NetAdapter | Get-DnsClientServerAddress -AddressFamily IPV4  -ErrorAction SilentlyContinue | select -Property InterfaceAlias, ServerAddresses;
-    $fNetAdapterInfo = [pscustomobject][Ordered]@{
-      "ComputerName" = $ENV:ComputerName;
-      "InterfaceAlias" = $fIPAdresses.InterfaceAlias;
-      "IPAdresses" = $fIPAdresses.IPAddress;
-	  "DHCP" = $fIPAdresses.PrefixOrigin;
-      "DNSServers" = $fDNSServers.ServerAddresses;
+    $fLocalBlock01 = { $NetAdapter = Get-NetAdapter -Name *
+      $fIPAdresses = $NetAdapter | Get-NetIPAddress -AddressFamily IPv4  -ErrorAction SilentlyContinue | Select InterfaceAlias, IPAddress, PrefixOrigin;
+      $fDNSServers = $NetAdapter | Get-DnsClientServerAddress -AddressFamily IPV4  -ErrorAction SilentlyContinue | select -Property InterfaceAlias, ServerAddresses;
+      $fNetAdapterInfo = [pscustomobject][Ordered]@{
+        "ComputerName" = $ENV:ComputerName;
+        "DHCP" = $fIPAdresses.PrefixOrigin;
+        "IPAdresses" = $fIPAdresses.IPAddress;
+        "DNSServers" = $fDNSServers.ServerAddresses;
+        "InterfaceAlias" = $fIPAdresses.InterfaceAlias;
+      };
+      $fNetAdapterInfo;
     };
-    $fNetAdapterInfo;
-  };
-    $fResult = @(); $fResult = Foreach ($fQueryComputer in $fQueryComputers) {
-     Write-Host "  Querying Server: $($fQueryComputer.Name)";
-    IF ($fQueryComputer.Name -eq $Env:COMPUTERNAME) {
-      Invoke-Command -ScriptBlock $fLocalBlock01 | Select ComputerName, InterfaceAlias, IPAdresses, DHCP, DNSServers;
-    } Else {
-      Invoke-Command -ComputerName $fQueryComputer.name -ScriptBlock $fBlock01 | Select ComputerName, InterfaceAlias, IPAdresses, DHCP, DNSServers;
+    ForEach ($fQueryComputer in $fQueryComputers) {
+      Write-Host "Querying Server: $($fQueryComputer.name)";
+      IF ($fQueryComputer -eq $Env:COMPUTERNAME) {
+        $fLocalHostResult = Invoke-Command -scriptblock $fLocalBlock01;
+      } ELSE {
+        $fJobResult = Invoke-Command -ComputerName $fQueryComputer.name -ScriptBlock $fBlock01 -JobName "$($fJobNamePrefix)$($fQueryComputer.name)" -ThrottleLimit 16 -AsJob
+      };
+    };
+      Write-Host "  Waiting for jobs to complete... `n";
+      Show-JobStatus $fJobNamePrefix;
+      $fResult = @(); $fResult = Foreach ($fJob in (Get-Job -Name "$($fJobNamePrefix)*")) {Receive-Job -id $fJob.ID -Keep}; Get-Job -State Completed | Remove-Job; Write-Host $(Get-Job |ft -AutoSize  | out-string); Get-Job -State Failed | Remove-Job;
+      $fResult = $fResult + $fLocalHostResult; $fResult = $fResult | Sort DHCP, ComputerName, InterfaceAlias | Select ComputerName, DHCP, IPAdresses, DNSServers, InterfaceAlias;
+ ## Output
+    #$fResult | FT -Autosize;
+  ## Exports
+    If (($fExport -eq "Y") -or ($fExport -eq "YES")) { Export-CSVData -fFileNameText "$($fFileNameText)" -fCustomerName $fCustomerName -fExportData $($fResult;)};
+   ## Return
+    [hashtable]$Return = @{}; 
+    $Return.NetAdapterInfo = $fResult;
+    Return $Return;
+};
+  ForEach ($fQueryComputer in $fQueryComputers) {
+    Write-Host "Querying Server: $($fQueryComputer.name)";
+    IF ($fQueryComputer -eq $Env:COMPUTERNAME) {
+      $fLocalHostResult = Invoke-Command -scriptblock $fLocalBlock01;
+    } ELSE {
+      $fJobResult = Invoke-Command -ComputerName $fQueryComputer.name -ScriptBlock $fBlock01 -JobName "$($fJobNamePrefix)$($fQueryComputer.name)" -ThrottleLimit 16 -AsJob
     };
   };
+  Write-Host "  Waiting for jobs to complete... `n";
+   Show-JobStatus $fJobNamePrefix;
+   $fResult = @(); $fResult = Foreach ($fJob in (Get-Job -Name "$($fJobNamePrefix)*")) {Receive-Job -id $fJob.ID -Keep}; Get-Job -State Completed | Remove-Job; Write-Host $(Get-Job |ft -AutoSize  | out-string); Get-Job -State Failed | Remove-Job;
+   $fResult = ($fResult + $fLocalHostResult) | Sort DHCP, ComputerName, InterfaceAlias | Select ComputerName, DHCP, IPAdresses, DNSServers, InterfaceAlias;
   ## Output
     $fResult | Sort ComputerName, InterfaceAlias;
   ## Exports

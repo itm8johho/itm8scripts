@@ -642,14 +642,6 @@ Function Get-NetAdapterInfo {
     $Return.NetAdapterInfo = $fResult;
     Return $Return;
 };
-  ForEach ($fQueryComputer in $fQueryComputers) {
-    Write-Host "Querying Server: $($fQueryComputer.name)";
-    IF ($fQueryComputer -eq $Env:COMPUTERNAME) {
-      $fLocalHostResult = Invoke-Command -scriptblock $fLocalBlock01;
-    } ELSE {
-      $fJobResult = Invoke-Command -ComputerName $fQueryComputer.name -ScriptBlock $fBlock01 -JobName "$($fJobNamePrefix)$($fQueryComputer.name)" -ThrottleLimit 16 -AsJob
-    };
-  };
 Function Get-TimeSyncStatusDomain {## Get TimeSync Status (Registry) - need an AD Server or Server with RSAT
   Param(
     $fCustomerName = $(Get-CustomerName),

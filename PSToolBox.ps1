@@ -650,19 +650,6 @@ Function Get-NetAdapterInfo {
       $fJobResult = Invoke-Command -ComputerName $fQueryComputer.name -ScriptBlock $fBlock01 -JobName "$($fJobNamePrefix)$($fQueryComputer.name)" -ThrottleLimit 16 -AsJob
     };
   };
-  Write-Host "  Waiting for jobs to complete... `n";
-   Show-JobStatus $fJobNamePrefix;
-   $fResult = @(); $fResult = Foreach ($fJob in (Get-Job -Name "$($fJobNamePrefix)*")) {Receive-Job -id $fJob.ID -Keep}; Get-Job -State Completed | Remove-Job; Write-Host $(Get-Job |ft -AutoSize  | out-string); Get-Job -State Failed | Remove-Job;
-   $fResult = ($fResult + $fLocalHostResult) | Sort DHCP, ComputerName, InterfaceAlias | Select ComputerName, DHCP, IPAdresses, DNSServers, InterfaceAlias;
-  ## Output
-    $fResult | Sort ComputerName, InterfaceAlias;
-  ## Exports
-    If (($fExport -eq "Y") -or ($fExport -eq "YES")) { Export-CSVData -fFileNameText "$($fFileNameText)" -fCustomerName $fCustomerName -fExportData $($fResult | Sort ComputerName, InterfaceAlias)};
-   ## Return
-    [hashtable]$Return = @{}; 
-    $Return.NetAdapterInfo = $fResult | Sort ComputerName, InterfaceAlias;
-    Return $Return;
-};
 Function Get-TimeSyncStatusDomain {## Get TimeSync Status (Registry) - need an AD Server or Server with RSAT
   Param(
     $fCustomerName = $(Get-CustomerName),

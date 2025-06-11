@@ -588,7 +588,7 @@ Function Get-ExpiredCertificatesDomain {## Get-Expired_Certificates
     $Return.ExpiredCertificates = $fResult |  Sort PSComputerName, Expires, FriendlyName | Select PSComputerName, Expires, FriendlyName, Subject, ParentPath, Issuer, Thumbprint;
     Return $Return;
 };
-Function Get-NetAdapterInfo {
+Function Get-NetAdapterInfoDomain {
   Param(
     $fCustomerName = $(Get-CustomerName),
     $fQueryComputers = $(Get-QueryComputers),

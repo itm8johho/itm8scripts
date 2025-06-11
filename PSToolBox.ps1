@@ -248,7 +248,7 @@ Function Get-LatestRebootDomain { ### Get-LatestReboot - Get Latest Reboot / Res
     Write-Host "  Waiting for jobs to complete... `n";
     Show-JobStatus $fJobNamePrefix;
     $fResult = Foreach ($fJob in (Get-Job -Name "$($fJobNamePrefix)*")) {Receive-Job -id $fJob.ID -Keep}; Get-Job -State Completed | Remove-Job;
-    $fResult = $fResult + $fLocalHostResult;
+    $fResult = $($fResult;$fLocalHostResult);
   ## Output
     #$fResult | sort MachineName, TimeGenerated | Select MachineName, TimeGenerated, UserName | FT -autosize;
   ## Exports
@@ -578,7 +578,7 @@ Function Get-ExpiredCertificatesDomain {## Get-Expired_Certificates
     Write-Host "  Waiting for jobs to complete... `n";
     Show-JobStatus $fJobNamePrefix;
     $fResult = Foreach ($fJob in (Get-Job -Name "$($fJobNamePrefix)*")) {Receive-Job -id $fJob.ID -Keep}; Get-Job -State Completed | Remove-Job;
-    $fResult = $fResult + $fLocalHostResult;
+    $fResult = $($fResult;$fLocalHostResult);
   ## Output
     #$fResult | Sort PSComputerName, Expires, FriendlyName | Select PSComputerName, Expires, FriendlyName, Subject, ParentPath, Issuer, Thumbprint | FT -autosize;
   ## Exports
@@ -632,7 +632,7 @@ Function Get-NetAdapterInfoDomain {
       Write-Host "  Waiting for jobs to complete... `n";
       Show-JobStatus $fJobNamePrefix;
       $fResult = @(); $fResult = Foreach ($fJob in (Get-Job -Name "$($fJobNamePrefix)*")) {Receive-Job -id $fJob.ID -Keep}; Get-Job -State Completed | Remove-Job; Write-Host $(Get-Job |ft -AutoSize  | out-string); Get-Job -State Failed | Remove-Job;
-      $fResult = $fResult + $fLocalHostResult; $fResult = $fResult | Sort DHCP, ComputerName, InterfaceAlias | Select ComputerName, DHCP, IPAdresses, DNSServers, InterfaceAlias;
+      $fResult = $($fResult;$fLocalHostResult); $fResult = $fResult | Sort DHCP, ComputerName, InterfaceAlias | Select ComputerName, DHCP, IPAdresses, DNSServers, InterfaceAlias;
  ## Output
     #$fResult | FT -Autosize;
   ## Exports
@@ -684,7 +684,7 @@ Function Get-TimeSyncStatusDomain {## Get TimeSync Status (Registry) - need an A
     Write-Host "  Waiting for jobs to complete... `n";
     Show-JobStatus $fJobNamePrefix;
     $fResult = Foreach ($fJob in (Get-Job -Name "$($fJobNamePrefix)*")) {Receive-Job -id $fJob.ID -Keep}; Get-Job -State Completed | Remove-Job;
-    $fResult = $fResult + $fLocalHostResult;
+    $fResult = $($fResult;$fLocalHostResult);
  ## Output
     #$fResult | Sort Servername | FT Servername, NTPServer, NTPType, TimeServiceStatus;
   ## Exports
@@ -740,7 +740,7 @@ Function Get-DateTimeStatusDomain {## Get Date & Time Status - need an AD Server
     Write-Host "  Waiting for jobs to complete... `n";
 	Show-JobStatus $fJobNamePrefix;
 	$fResult = Foreach ($fJob in (Get-Job -Name "$($fJobNamePrefix)*")) {Receive-Job -id $fJob.ID -Keep}; Get-Job -State Completed | Remove-Job;
-    $fResult = $fResult + $fLocalHostResult;
+    $fResult = $($fResult;$fLocalHostResult);
   ## Output
     #$fResult | Sort PSComputerName | Select PSComputerName, InternetTime, LocalTime, LocalNTPServer, LocalCulture, LocalTimeZone, InternetTimeZone;
   ## Exports

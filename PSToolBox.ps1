@@ -102,7 +102,7 @@ Function Show-Menu {
   #Write-Host "  Press '99' for this option.";
   Write-Host "  ";
   Write-Host "   Press 'H'  for Toolbox Help / Information.";
-  Write-Host "   Press 'x'  to Exit.";
+  Write-Host "   Press 'X'  to Exit.";
 };
 Function ToolboxMenu {
   do {

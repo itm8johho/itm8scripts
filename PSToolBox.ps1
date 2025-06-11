@@ -102,7 +102,7 @@ Function Show-Menu {
   #Write-Host "  Press '99' for this option.";
   Write-Host "  ";
   Write-Host "   Press 'H'  for Toolbox Help / Information.";
-  Write-Host "   Press 'Q'  to quit.";
+  Write-Host "   Press 'x'  to Exit.";
 };
 Function ToolboxMenu {
   do {
@@ -190,7 +190,7 @@ Function ToolboxMenu {
         Show-Help;
         Pause;};
     }; # End Switch
-  } until (($selection -eq "q") -or ($selection -eq "0"));
+  } until (($selection -eq "x") -or ($selection -eq "q") -or ($selection -eq "0"));
 };
 ## End Start Menu
 ### Functions

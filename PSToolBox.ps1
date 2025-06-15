@@ -328,19 +328,29 @@ Function ToolboxMenu {
 ### Functions
 Function Get-LatestRebootLocal { ### Get-LatestReboot - Get Latest Reboot / Restart / Shutdown for logged on server
   Param(
-    $fExport = ("Yes" | %{ If($Entry = Read-Host "  Export result to file ( Y/N - Default: $_ )"){$Entry} Else {$_} }),
+    $fExportHTML = (Get-ExportHTML),
+    $fExportCSV = (Get-ExportCSV),
 	$fEventLogStartTime = (Get-LogStartTime -DefaultDays "7" -DefaultHours "12"),
     $fFileNameText = "Get-LatestReboot_$($ENV:Computername)"
   );
   ## Script
     Show-Title "Get latest Shutdown / Restart / Reboot for Local Server - Events After: $($fEventLogStartTime)";
-    $fLatestBootTime = Get-WmiObject win32_operatingsystem | select csname, @{LABEL="LastBootUpTime";EXPRESSION={$_.ConverttoDateTime($_.lastbootuptime)}};
+    $fLatestBootTime = Get-WmiObject win32_operatingsystem | select @{LABEL="MachineName";EXPRESSION={$_.csname}}, @{LABEL="LastBootUpTime";EXPRESSION={$_.ConverttoDateTime($_.lastbootuptime)}};
     $fResult = Get-EventLog -LogName System -After $fEventLogStartTime | Where-Object {($_.EventID -eq 1074) -or ($_.EventID -eq 6008) -or ($_.EventID -eq 41)};
 	IF (!($fResult)){$fResult = [pscustomobject]@{MachineName = $($Env:COMPUTERNAME);TimeGenerated = ""; UserName = "$($($Env:COMPUTERNAME)) is not rebooted in the query periode" }};
   ## Output
     # $fResult | Select MachineName, TimeGenerated, UserName, Message | fl; $fResult | Select MachineName, TimeGenerated, UserName | ft -Autosize; $fLatestBootTime;
   ## Exports
-    If (($fExport -eq "Y") -or ($fExport -eq "YES")) { Export-CSVData -fFileNameText "$($fFileNameText)" -fCustomerName $fCustomerName -fExportData $($fResult | sort MachineName, TimeGenerated | Select MachineName, TimeGenerated, UserName, Message) };
+    If (($fExportHTML -eq "Y") -or ($fExportHTML -eq "YES")) { 
+	  [hashtable]$ExportData = @{}; # Add up to 9 Title- and Content-variables
+      $ExportData.SiteTitle = "Get latest Shutdown / Restart / Reboot for Local Server - Events After: $($fEventLogStartTime)";
+      $ExportData.Title1 = "Latest BootTime"; $ExportData.Content1 = $fLatestBootTime | ConvertTo-HTML -Fragment
+      $ExportData.Title2 = "Latest Reboot"; $ExportData.Content2 = $($fResult | Select MachineName, TimeGenerated, UserName) | ConvertTo-HTML -Fragment
+      $ExportData.Title3 = "Latest Reboot (Extended)"; $ExportData.Content3 = $($fResult | Select MachineName, TimeGenerated, UserName, Message) | ConvertTo-HTML -Fragment
+      #$ExportData.Title4 = "Latest Reboot (Extended)"; $ExportData.Content4 = $($fResult | Select MachineName, TimeGenerated, UserName, Message) | ConvertTo-HTML -Fragment
+      Export-HTMLData -fFileNameText "$($fFileNameText)" -fCustomerName $fCustomerName -fExportData $ExportData
+    };
+    If (($fExportCSV -eq "Y") -or ($fExportCSV -eq "YES")) { Export-CSVData -fFileNameText "$($fFileNameText)" -fCustomerName $fCustomerName -fExportData $($fResult | sort MachineName, TimeGenerated | Select MachineName, TimeGenerated, UserName, Message) };
   ## Return
     [hashtable]$Return = @{};
     $Return.LatestBootEventsExtended = $fResult | Select MachineName, TimeGenerated, UserName, Message;

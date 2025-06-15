@@ -18,6 +18,12 @@ Function Get-CustomerName {
   # Add this line to Params: $fCustomerName = $(Get-CustomerName)
   ("$($Env:USERDOMAIN)" | %{ If($Entry = Read-Host "  Enter CustomerName ( Default: $_ )"){"$($Entry)_"} Else {"$($_)_"} })
 };
+Function Get-ExportHTML { Param ( $fExportHTML = ("Yes" | %{ If($Entry = Read-Host "  Export result to HTML-file ( Y/N - Default: $_ )"){$Entry} Else {$_} }) );
+  Return $fExportHTML;
+};
+Function Get-ExportCSV { Param ( $fExportCSV = ("Yes" | %{ If($Entry = Read-Host "  Export result to CSV-file ( Y/N - Default: $_ )"){$Entry} Else {$_} }) );
+  Return $fExportCSV;
+};
 Function Get-LogStartTime {
   # Add this line to Params: $fEventLogStartTime = (Get-LogStartTime -DefaultDays "7" -DefaultHours "12"),
   Param( $DefaultDays, $DefaultHours,
@@ -39,14 +45,6 @@ Function Get-QueryComputers {  ### Get-QueryComputers - Get Domain Servers names
     $fQueryComputers = $fQueryComputers | Sort Name;
     Return $fQueryComputers;
  };
-Function Export-CSVData { Param ( $fFileNameText, $fCustomerName, $fExportData ); ##
-  # Add this line to Params: $fFileNameText = "<FILENAME>"    /    $fFileNameText = "<FILENAME>",
-  # Add this line to Script: If (($fExport -eq "Y") -or ($fExport -eq "YES")) { Export-CSVData -fFileNameText "$($fFileNameText)" -fCustomerName $fCustomerName -fExportData $(<EXPORTDATA>) };
-  $fFileNameBase = "$($fCustomerName)$(($fFileNameText).Split([IO.Path]::GetInvalidFileNameChars()) -join '_')_($(get-date -f "yyyy-MM-dd_HH.mm"))";
-  $fFileName = "$([Environment]::GetFolderPath("Desktop"))\$($fFileNameBase)";
-  #$fFileName = "$($env:USERPROFILE)\Desktop\$($fFileNameBase)";
-  $fExportData | Export-CSV "$($fFileName).csv" -Delimiter ';' -Encoding UTF8 -NoTypeInformation -ErrorAction SilentlyContinue;
-};
 Function Export-HTMLData { Param ( $fFileNameText, $fCustomerName, $fExportData ); ##
   # Add this line to Params: $fFileNameText = "<FILENAME>"    /    $fFileNameText = "<FILENAME>",
   # Add this line to Script: If (($fExport -eq "Y") -or ($fExport -eq "YES")) { Export-HTMLData -fFileNameText "$($fFileNameText)" -fCustomerName $fCustomerName -fExportData $(<EXPORTDATA>) };
@@ -173,6 +171,14 @@ $Report = ConvertTo-HTML -Body "$layout" -Head $header
 #The command below will generate the report to an HTML file
 $Report | Out-File "$($fFileName).html"; ii "$($fFileName).html"
 }; # End Function Export-HTMLData
+Function Export-CSVData { Param ( $fFileNameText, $fCustomerName, $fExportData ); ##
+  # Add this line to Params: $fFileNameText = "<FILENAME>"    /    $fFileNameText = "<FILENAME>",
+  # Add this line to Script: If (($fExport -eq "Y") -or ($fExport -eq "YES")) { Export-CSVData -fFileNameText "$($fFileNameText)" -fCustomerName $fCustomerName -fExportData $(<EXPORTDATA>) };
+  $fFileNameBase = "$($fCustomerName)$(($fFileNameText).Split([IO.Path]::GetInvalidFileNameChars()) -join '_')_($(get-date -f "yyyy-MM-dd_HH.mm"))";
+  $fFileName = "$([Environment]::GetFolderPath("Desktop"))\$($fFileNameBase)";
+  #$fFileName = "$($env:USERPROFILE)\Desktop\$($fFileNameBase)";
+  $fExportData | Export-CSV "$($fFileName).csv" -Delimiter ';' -Encoding UTF8 -NoTypeInformation -ErrorAction SilentlyContinue;
+};
 Function Show-Title {
   # Add this line to Script: Show-Title "<TITLE>";
   Param ( [string]$Title );

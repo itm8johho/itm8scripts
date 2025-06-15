@@ -47,6 +47,132 @@ Function Export-CSVData { Param ( $fFileNameText, $fCustomerName, $fExportData )
   #$fFileName = "$($env:USERPROFILE)\Desktop\$($fFileNameBase)";
   $fExportData | Export-CSV "$($fFileName).csv" -Delimiter ';' -Encoding UTF8 -NoTypeInformation -ErrorAction SilentlyContinue;
 };
+Function Export-HTMLData { Param ( $fFileNameText, $fCustomerName, $fExportData ); ##
+  # Add this line to Params: $fFileNameText = "<FILENAME>"    /    $fFileNameText = "<FILENAME>",
+  # Add this line to Script: If (($fExport -eq "Y") -or ($fExport -eq "YES")) { Export-HTMLData -fFileNameText "$($fFileNameText)" -fCustomerName $fCustomerName -fExportData $(<EXPORTDATA>) };
+  <#
+    [hashtable]$ExportData = @{}; # Add up to 9 Title- and Content-variables
+    $ExportData.SiteTitle = "Example_Title";
+    $ExportData.Title1 = "Menu_1"; $ExportData.Content1 = $Data1 | ConvertTo-HTML -Fragment
+    $ExportData.Title2 = "Menu_2"; $ExportData.Content2 = $Data2 | ConvertTo-HTML -Fragment
+    $ExportData.Title3 = "Menu_3"; $ExportData.Content3 = $Data3 | ConvertTo-HTML -Fragment
+  #>
+  $fFileNameBase = "$($fCustomerName)$(($fFileNameText).Split([IO.Path]::GetInvalidFileNameChars()) -join '_')_($(get-date -f "yyyy-MM-dd_HH.mm"))";
+  $fFileName = "$([Environment]::GetFolderPath("Desktop"))\$($fFileNameBase)";
+  #$fFileName = "$($env:USERPROFILE)\Desktop\$($fFileNameBase)";
+<### HTML Site ###>
+## HTML header
+# ITM8 White: https://itm8.dk/hubfs/BRANDING/brand-guidelines/itm8-white-vector.svg
+# ITM8 Purple: https://itm8.dk/hubfs/BRANDING/brand-guidelines/itm8-purple-vector.svg
+# ITM8 Logo: https://itm8.dk/hs-fs/hubfs/BRANDING/itm8-rgb-tall.png"
+$header = @"
+<head>
+  <title>$($fExportData.SiteTitle)</title>
+  <link rel="shortcut icon" href="https://itm8.dk/hubfs/BRANDING/itm8_favicon_logo_16x16px.png">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
+<style>
+.tab-pane th, .tab-pane td {
+  padding: 1px 5px;
+  vertical-align: top; 
+}
+.tab-pane th {
+  onclick="sortTable(1)"
+}
+.tab-pane tr:nth-child(odd) {
+  background-color: #f2f2f2
+}
+</style>
+</head>
+"@ ## END HTML header
+#
+## Main layout
+$layout = @"
+<body>
+<div class="container">
+  <img src="https://itm8.dk/hubfs/BRANDING/brand-guidelines/itm8-purple-vector.svg" height="50" style="padding-top: 8px;">
+  <table style="width:100%"><tr><td><h2>$($fExportData.SiteTitle)</h2></td><td align="Right" valign="Bottom"><style="margin-bottom: 0px;" id='CreationDate'>Creation Date: $(Get-Date)</td></tr></table>
+  <!-- Menu Panes -->
+  <ul class="nav nav-tabs">
+    <li class="active"><a data-toggle="tab" href="#menu1">$($fExportData.Title1)</a></li>
+    $(if ($($fExportData.Content2)) {" <li><a data-toggle='tab' href='#menu2'>$($fExportData.Title2)</a></li> "})
+    $(if ($($fExportData.Content3)) {" <li><a data-toggle='tab' href='#menu3'>$($fExportData.Title3)</a></li> "})
+    $(if ($($fExportData.Content4)) {" <li><a data-toggle='tab' href='#menu4'>$($fExportData.Title4)</a></li> "})
+    $(if ($($fExportData.Content5)) {" <li><a data-toggle='tab' href='#menu4'>$($fExportData.Title5)</a></li> "})
+    $(if ($($fExportData.Content6)) {" <li><a data-toggle='tab' href='#menu4'>$($fExportData.Title6)</a></li> "})
+    $(if ($($fExportData.Content7)) {" <li><a data-toggle='tab' href='#menu4'>$($fExportData.Title7)</a></li> "})
+    $(if ($($fExportData.Content8)) {" <li><a data-toggle='tab' href='#menu4'>$($fExportData.Title8)</a></li> "})
+    $(if ($($fExportData.Content9)) {" <li><a data-toggle='tab' href='#menu4'>$($fExportData.Title9)</a></li> "})
+  </ul>
+  <!-- Menu Data Display -->
+  <div class="tab-content">
+    <div id="menu1" class="tab-pane fade in active">
+      <h3>$($fExportData.Title1)</h3>
+      <p>$($fExportData.Content1)</p>
+    </div>
+    $(if ($($fExportData.Content2)) {"
+      <div id='menu2' class='tab-pane fade'>
+        <h3>$($fExportData.Title2)</h3>
+        <p>$($fExportData.Content2)</p>
+      </div>
+    "})
+    $(if ($($fExportData.Content3)) {"
+	  <div id='menu3' class='tab-pane fade'>
+        <h3>$($fExportData.Title3)</h3>
+        <p>$($fExportData.Content3)</p>
+      </div>
+    "})
+    $(if ($($fExportData.Content4)) {"
+      <div id='menu4' class='tab-pane fade'>
+        <h3>$($fExportData.Title4)</h3>
+        <p>$($fExportData.Content4)</p>
+      </div>
+    "})
+    $(if ($($fExportData.Content5)) {"
+      <div id='fExportData' class='tab-pane fade'>
+        <h3>$($fExportData.Title5)</h3>
+        <p>$($fExportData.Content5)</p>
+      </div>
+    "})
+    $(if ($($fExportData.Content6)) {"
+      <div id='menu6' class='tab-pane fade'>
+        <h3>$($fExportData.Title6)</h3>
+        <p>$($fExportData.Content6)</p>
+      </div>
+    "})
+    $(if ($($fExportData.Content7)) {"
+      <div id='menu7' class='tab-pane fade'>
+        <h3>$($fExportData.Title7)</h3>
+        <p>$($fExportData.Content7)</p>
+      </div>
+    "})
+    $(if ($($fExportData.Content8)) {"
+      <div id='menu8' class='tab-pane fade'>
+        <h3>$($fExportData.Title8)</h3>
+        <p>$($fExportData.Content8)</p>
+      </div>
+    "})
+    $(if ($($fExportData.Content9)) {"
+      <div id='menu9' class='tab-pane fade'>
+        <h3>$($fExportData.Title9)</h3>
+        <p>$($fExportData.Content9)</p>
+      </div>
+    "})
+  </div>   <!-- END class="tab-content" -->
+</div>   <!-- END class="container" -->
+</body>
+"@ ## END Main layout
+#
+#The command below will combine all the information gathered into a single HTML report
+#$Report = ConvertTo-HTML -Body "$layout" -Title "Computer Information Report" -Head $header -PostContent "<p>Creation Date: $(Get-Date)<p>"
+$Report = ConvertTo-HTML -Body "$layout" -Head $header
+#
+#The command below will generate the report to an HTML file
+$Report | Out-File "$($fFileName).html"; ii "$($fFileName).html"
+}; # End Function Export-HTMLData
 Function Show-Title {
   # Add this line to Script: Show-Title "<TITLE>";
   Param ( [string]$Title );

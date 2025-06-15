@@ -21,7 +21,7 @@ Function Get-CustomerName {
 Function Get-ExportHTML { Param ( $fExportHTML = ("Yes" | %{ If($Entry = Read-Host "  Export result to HTML-file ( Y/N - Default: $_ )"){$Entry} Else {$_} }) );
   Return $fExportHTML;
 };
-Function Get-ExportCSV { Param ( $fExportCSV = ("Yes" | %{ If($Entry = Read-Host "  Export result to CSV-file ( Y/N - Default: $_ )"){$Entry} Else {$_} }) );
+Function Get-ExportCSV { Param ( $fExportCSV = ("Yes" | %{ If($Entry = Read-Host "  Export result to CSV-file  ( Y/N - Default: $_ )"){$Entry} Else {$_} }) );
   Return $fExportCSV;
 };
 Function Get-LogStartTime {
@@ -328,11 +328,11 @@ Function ToolboxMenu {
 ### Functions
 Function Get-LatestRebootLocal { ### Get-LatestReboot - Get Latest Reboot / Restart / Shutdown for logged on server
   Param(
-    $fTitle = "Get latest Shutdown / Restart / Reboot for Local Server - Events After: $($fEventLogStartTime)",
+    $fEventLogStartTime = (Get-LogStartTime -DefaultDays "7" -DefaultHours "12"),
     $fExportHTML = (Get-ExportHTML),
     $fExportCSV = (Get-ExportCSV),
-    $fEventLogStartTime = (Get-LogStartTime -DefaultDays "7" -DefaultHours "12"),
-    $fFileNameText = "Get-LatestReboot_$($ENV:Computername)"
+    $fFileNameText = "Get-LatestReboot_$($ENV:Computername)",
+    $fTitle = "Get latest Shutdown / Restart / Reboot for Local Server - Events After: $($fEventLogStartTime)"
   );
   ## Script
     Show-Title $fTitle
@@ -360,14 +360,14 @@ Function Get-LatestRebootLocal { ### Get-LatestReboot - Get Latest Reboot / Rest
 };
 Function Get-LatestRebootDomain { ### Get-LatestReboot - Get Latest Reboot / Restart / Shutdown for multiple Domain servers
   Param(
-    $fTitle = "Get latest Shutdown / Restart / Reboot for multiple Domain Servers - Events After: $($fEventLogStartTime)",
     $fCustomerName = $(Get-CustomerName),
     $fQueryComputers = $(Get-QueryComputers),
     $fEventLogStartTime = $(Get-LogStartTime -DefaultDays "7" -DefaultHours "12"),
     $fExportHTML = (Get-ExportHTML),
     $fExportCSV = (Get-ExportCSV),
     $fJobNamePrefix = "LatestReboot_",
-    $fFileNameText = "Servers_Get-LatestReboot"
+    $fFileNameText = "Servers_Get-LatestReboot",
+    $fTitle = "Get latest Shutdown / Restart / Reboot for multiple Domain Servers - Events After: $($fEventLogStartTime)"
   );
   ## Script
     Show-Title $fTitle;
@@ -412,11 +412,11 @@ Function Get-LatestRebootDomain { ### Get-LatestReboot - Get Latest Reboot / Res
 };
 Function Get-LoginLogoffLocal { ## Get-LoginLogoff from Logged On for Local Computer/Server
   Param(
-    $fTitle = "Get latest Login / Logoff for Local Computer/Server - Events After: $($fEventLogStartTime)",
     $fEventLogStartTime = $(Get-LogStartTime -DefaultDays "7" -DefaultHours "12"),
     $fExportHTML = (Get-ExportHTML),
     $fExportCSV = (Get-ExportCSV),
-    $fFileNameText = "Get-LatestLoginLogoff_$($ENV:Computername)"
+    $fFileNameText = "Get-LatestLoginLogoff_$($ENV:Computername)",
+    $fTitle = "Get latest Login / Logoff for Local Computer/Server - Events After: $($fEventLogStartTime)"
   );
   ## Default Variables
     $fUserProperty = @{n="User";e={(New-Object System.Security.Principal.SecurityIdentifier $_.ReplacementStrings[1]).Translate([System.Security.Principal.NTAccount])}}

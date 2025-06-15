@@ -118,7 +118,7 @@ $layout = @"
       </div>
     "})
     $(if ($($fExportData.Content3)) {"
-	  <div id='menu3' class='tab-pane fade'>
+      <div id='menu3' class='tab-pane fade'>
         <h3>$($fExportData.Title3)</h3>
         <p>$($fExportData.Content3)</p>
       </div>
@@ -269,7 +269,7 @@ Function ToolboxMenu {
           If ($DomainQueryEnabled -eq $True) {$Result = Get-UserPasswordNeverExpires; $Result.count; $Result.UserPasswordNeverExpires | FT -Autosize;} ELSE {$DomainQueryEnabledInfo}
           Pause;};
       "10" { "`n`n  You selected: Get ITM8 Users`n"
-		  If ($DomainQueryEnabled -eq $True) {$Result = Get-ITM8Users; $Result.count; $Result.ITM8Users | FT -Autosize;} ELSE {$DomainQueryEnabledInfo}
+          If ($DomainQueryEnabled -eq $True) {$Result = Get-ITM8Users; $Result.count; $Result.ITM8Users | FT -Autosize;} ELSE {$DomainQueryEnabledInfo}
           Pause;};
 
       "21" { "`n`n  You selected: Get HotFixInstallDates for Local Computer/Server`n"
@@ -293,7 +293,7 @@ Function ToolboxMenu {
           Pause;};
 
       "31" { "`n`n  You selected: Get FolderPermission for Local Computer/Server`n"
-		  $Result = Get-FolderPermissionLocal; $Result.FolderPermission | FT -Autosize; $Result.FolderPermission_Level_01_02 | FT -Autosize;
+          $Result = Get-FolderPermissionLocal; $Result.FolderPermission | FT -Autosize; $Result.FolderPermission_Level_01_02 | FT -Autosize;
           Pause;};
       "32" { "`n`n  You selected: Get TimeSync Status for Domain Servers`n"
           If ($DomainQueryEnabled -eq $True) {$Result = Get-TimeSyncStatusDomain; $Result.TimeSyncStatus | FT -Autosize;} ELSE {$DomainQueryEnabledInfo}
@@ -328,26 +328,26 @@ Function ToolboxMenu {
 ### Functions
 Function Get-LatestRebootLocal { ### Get-LatestReboot - Get Latest Reboot / Restart / Shutdown for logged on server
   Param(
+    $fTitle = "Get latest Shutdown / Restart / Reboot for Local Server - Events After: $($fEventLogStartTime)",
     $fExportHTML = (Get-ExportHTML),
     $fExportCSV = (Get-ExportCSV),
-	$fEventLogStartTime = (Get-LogStartTime -DefaultDays "7" -DefaultHours "12"),
+    $fEventLogStartTime = (Get-LogStartTime -DefaultDays "7" -DefaultHours "12"),
     $fFileNameText = "Get-LatestReboot_$($ENV:Computername)"
   );
   ## Script
-    Show-Title "Get latest Shutdown / Restart / Reboot for Local Server - Events After: $($fEventLogStartTime)";
+    Show-Title $fTitle
     $fLatestBootTime = Get-WmiObject win32_operatingsystem | select @{LABEL="MachineName";EXPRESSION={$_.csname}}, @{LABEL="LastBootUpTime";EXPRESSION={$_.ConverttoDateTime($_.lastbootuptime)}};
     $fResult = Get-EventLog -LogName System -After $fEventLogStartTime | Where-Object {($_.EventID -eq 1074) -or ($_.EventID -eq 6008) -or ($_.EventID -eq 41)};
-	IF (!($fResult)){$fResult = [pscustomobject]@{MachineName = $($Env:COMPUTERNAME);TimeGenerated = ""; UserName = "$($($Env:COMPUTERNAME)) is not rebooted in the query periode" }};
+    IF (!($fResult)){$fResult = [pscustomobject]@{MachineName = $($Env:COMPUTERNAME);TimeGenerated = ""; UserName = "$($($Env:COMPUTERNAME)) is not rebooted in the query periode" }};
   ## Output
     # $fResult | Select MachineName, TimeGenerated, UserName, Message | fl; $fResult | Select MachineName, TimeGenerated, UserName | ft -Autosize; $fLatestBootTime;
   ## Exports
     If (($fExportHTML -eq "Y") -or ($fExportHTML -eq "YES")) { 
-	  [hashtable]$ExportData = @{}; # Add up to 9 Title- and Content-variables
-      $ExportData.SiteTitle = "Get latest Shutdown / Restart / Reboot for Local Server - Events After: $($fEventLogStartTime)";
+      [hashtable]$ExportData = @{}; # Add up to 9 Title- and Content-variables
+      $ExportData.SiteTitle = $fTitle
       $ExportData.Title1 = "Latest BootTime"; $ExportData.Content1 = $fLatestBootTime | ConvertTo-HTML -Fragment
       $ExportData.Title2 = "Latest Reboot"; $ExportData.Content2 = $($fResult | Select MachineName, TimeGenerated, UserName) | ConvertTo-HTML -Fragment
       $ExportData.Title3 = "Latest Reboot (Extended)"; $ExportData.Content3 = $($fResult | Select MachineName, TimeGenerated, UserName, Message) | ConvertTo-HTML -Fragment
-      #$ExportData.Title4 = "Latest Reboot (Extended)"; $ExportData.Content4 = $($fResult | Select MachineName, TimeGenerated, UserName, Message) | ConvertTo-HTML -Fragment
       Export-HTMLData -fFileNameText "$($fFileNameText)" -fCustomerName $fCustomerName -fExportData $ExportData
     };
     If (($fExportCSV -eq "Y") -or ($fExportCSV -eq "YES")) { Export-CSVData -fFileNameText "$($fFileNameText)" -fCustomerName $fCustomerName -fExportData $($fResult | sort MachineName, TimeGenerated | Select MachineName, TimeGenerated, UserName, Message) };
@@ -360,17 +360,17 @@ Function Get-LatestRebootLocal { ### Get-LatestReboot - Get Latest Reboot / Rest
 };
 Function Get-LatestRebootDomain { ### Get-LatestReboot - Get Latest Reboot / Restart / Shutdown for multiple Domain servers
   Param(
+    $fTitle = "Get latest Shutdown / Restart / Reboot for multiple Domain Servers - Events After: $($fEventLogStartTime)",
     $fCustomerName = $(Get-CustomerName),
     $fQueryComputers = $(Get-QueryComputers),
     $fEventLogStartTime = $(Get-LogStartTime -DefaultDays "7" -DefaultHours "12"),
-    #$fExport = ("Yes" | %{ If($Entry = Read-Host "  Export result to file ( Y/N - Default: $_ )"){$Entry} Else {$_} }),
-    $fExport = "Yes",
-    $fExportExtended = ("Yes" | %{ If($Entry = Read-Host "  Export Standard & Extended(message included) result to file - ( Y/N - Default: $_ )"){$Entry} Else {$_} }),
+    $fExportHTML = (Get-ExportHTML),
+    $fExportCSV = (Get-ExportCSV),
     $fJobNamePrefix = "LatestReboot_",
     $fFileNameText = "Servers_Get-LatestReboot"
   );
   ## Script
-    Show-Title "Get latest Shutdown / Restart / Reboot for multiple Domain Servers - Events After: $($fEventLogStartTime)";
+    Show-Title $fTitle;
     Foreach ($fQueryComputer in $fQueryComputers.name) { # Get $fQueryComputers-Values like .Name, .DNSHostName, or add them to variables in the scriptblocks/functions
       Write-Host "Querying Server: $($fQueryComputer)";
       $fBlock01 = {$fBlockResult = Get-EventLog -LogName System -After $Using:fEventLogStartTime | Where-Object {($_.EventID -eq 1074) -or ($_.EventID -eq 6008) -or ($_.EventID -eq 41) }
@@ -394,8 +394,17 @@ Function Get-LatestRebootDomain { ### Get-LatestReboot - Get Latest Reboot / Res
   ## Output
     #$fResult | sort MachineName, TimeGenerated | Select MachineName, TimeGenerated, UserName | FT -autosize;
   ## Exports
-    If (($fExport -eq "Y") -or ($fExport -eq "YES")) { Export-CSVData -fFileNameText "$($fFileNameText)" -fCustomerName $fCustomerName -fExportData $($fResult | sort MachineName, TimeGenerated | Select MachineName, TimeGenerated, UserName) };
-    If (($fExportExtended -eq "Y") -or ($fExportExtended -eq "YES")) { Export-CSVData -fFileNameText "$($fFileNameText)_Extended" -fCustomerName $fCustomerName -fExportData $($fResult | sort MachineName, TimeGenerated | Select MachineName, TimeGenerated, UserName, Message) };
+    If (($fExportHTML -eq "Y") -or ($fExportHTML -eq "YES")) { 
+      [hashtable]$ExportData = @{}; # Add up to 9 Title- and Content-variables
+      $ExportData.SiteTitle = $fTitle;
+      $ExportData.Title1 = "Latest Reboot"; $ExportData.Content1 =  $($fResult | sort MachineName, TimeGenerated | Select MachineName, TimeGenerated, UserName) | ConvertTo-HTML -Fragment
+      $ExportData.Title2 = "Latest Reboot (Extended)"; $ExportData.Content2 =$($fResult | Sort MachineName, TimeGenerated | Select MachineName, TimeGenerated, UserName, Message) | ConvertTo-HTML -Fragment
+      Export-HTMLData -fFileNameText "$($fFileNameText)" -fCustomerName $fCustomerName -fExportData $ExportData
+    };
+    If (($fExportCSV -eq "Y") -or ($fExport -eq "YES")) {
+      Export-CSVData -fFileNameText "$($fFileNameText)" -fCustomerName $fCustomerName -fExportData $($fResult | sort MachineName, TimeGenerated | Select MachineName, TimeGenerated, UserName);
+      Export-CSVData -fFileNameText "$($fFileNameText)_Extended" -fCustomerName $fCustomerName -fExportData $($fResult | Sort MachineName, TimeGenerated | Select MachineName, TimeGenerated, UserName, Message);
+    };
   ## Return
     [hashtable]$Return = @{};
     $Return.LatestBootEvents = $fResult | sort MachineName, TimeGenerated | Select MachineName, TimeGenerated, UserName;
@@ -403,8 +412,10 @@ Function Get-LatestRebootDomain { ### Get-LatestReboot - Get Latest Reboot / Res
 };
 Function Get-LoginLogoffLocal { ## Get-LoginLogoff from Logged On for Local Computer/Server
   Param(
+    $fTitle = "Get latest Login / Logoff for Local Computer/Server - Events After: $($fEventLogStartTime)",
     $fEventLogStartTime = $(Get-LogStartTime -DefaultDays "7" -DefaultHours "12"),
-    $fExport = ("Yes" | %{ If($Entry = Read-Host "  Export result to file ( Y/N - Default: $_ )"){$Entry} Else {$_} }),
+    $fExportHTML = (Get-ExportHTML),
+    $fExportCSV = (Get-ExportCSV),
     $fFileNameText = "Get-LatestLoginLogoff_$($ENV:Computername)"
   );
   ## Default Variables
@@ -413,13 +424,19 @@ Function Get-LoginLogoffLocal { ## Get-LoginLogoff from Logged On for Local Comp
     $fTimeProperty = @{n="Time";e={$_.TimeGenerated}}
     $fMachineNameProperty = @{n="MachineName";e={$_.MachineName}}
   ## Script
-    Show-Title "Get latest Login / Logoff for Local Computer/Server - Events After: $($fEventLogStartTime)";
+    Show-Title $fTitle;
     Write-Host "Querying Computer: $($ENV:Computername)"
     $fResult = Get-EventLog System -Source Microsoft-Windows-Winlogon -after $fEventLogStartTime | select $fUserProperty,$fTypeProperty,$fTimeProperty,$fMachineNameProperty
   ## Output
     #$fResult | sort User, Time | FT -autosize;
   ## Exports
-    If (($fExport -eq "Y") -or ($fExport -eq "YES")) { Export-CSVData -fFileNameText "$($fFileNameText)" -fCustomerName $fCustomerName -fExportData $($fResult | sort User, Time) };
+    If (($fExportHTML -eq "Y") -or ($fExportHTML -eq "YES")) { 
+      [hashtable]$ExportData = @{}; # Add up to 9 Title- and Content-variables
+      $ExportData.SiteTitle = $fTitle;
+      $ExportData.Title1 = "Latest Login-Logoff"; $ExportData.Content1 = $fResult | sort User, Time | ConvertTo-HTML -Fragment
+      Export-HTMLData -fFileNameText "$($fFileNameText)" -fCustomerName $fCustomerName -fExportData $ExportData
+    };
+    If (($fExportCSV -eq "Y") -or ($fExport -eq "YES")) { Export-CSVData -fFileNameText "$($fFileNameText)" -fCustomerName $fCustomerName -fExportData $($fResult | sort User, Time) };
   ## Return
     [hashtable]$Return = @{};
     $Return.LoginLogoff = $fResult | sort User, Time;

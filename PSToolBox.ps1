@@ -653,18 +653,18 @@ Function Get-HotFixInstallDatesLocal { ### Get-HotFixInstallDates for Local Comp
     $fResult | Add-Member -MemberType NoteProperty -Name "OperatingSystem" -Value "$((Get-ComputerInfo).WindowsProductName)";
     $fResult | Add-Member -MemberType NoteProperty -Name "IPv4Address" -Value "$((Get-NetIPAddress -AddressFamily IPv4 | ? {$_.IPAddress -notlike '127.0.0.1' }).IPAddress)";
   ## Output
-    #$fResult | sort MachineName, InstalledOn | Select PSComputerName, InstalledOn, InstalledBy, Description, HotFixID, OperatingSystem, IPv4Address | FT -autosize;
+    #$fResult | sort @{Expression = "MachineName"; Descending = $false},  @{Expression = "InstalledOn"; Descending = $true} | Select PSComputerName, InstalledOn, InstalledBy, Description, HotFixID, OperatingSystem, IPv4Address | FT -autosize;
   ## Exports
     If (($fExportHTML -eq "Y") -or ($fExportHTML -eq "YES")) { 
       [hashtable]$ExportData = @{}; # Add up to 9 Title- and Content-variables
       $ExportData.SiteTitle = $fTitle;
-      $ExportData.Title1 = "HotFix Install Dates"; $ExportData.Content1 =  $($fResult | sort MachineName, InstalledOn | Select PSComputerName, InstalledOn, InstalledBy, Description, HotFixID, OperatingSystem, IPv4Address ) | ConvertTo-HTML -Fragment
+      $ExportData.Title1 = "HotFix Install Dates"; $ExportData.Content1 =  $($fResult | sort @{Expression = "MachineName"; Descending = $false},  @{Expression = "InstalledOn"; Descending = $true} | Select PSComputerName, InstalledOn, InstalledBy, Description, HotFixID, OperatingSystem, IPv4Address ) | ConvertTo-HTML -Fragment
       Export-HTMLData -fFileNameText "$($fFileNameText)" -fCustomerName $fCustomerName -fExportData $ExportData
     };
-    If (($fExportCSV -eq "Y") -or ($fExportCSV -eq "YES")) { Export-CSVData -fFileNameText "$($fFileNameText)" -fCustomerName $fCustomerName -fExportData $($fResult | sort MachineName, InstalledOn | Select PSComputerName, InstalledOn, InstalledBy, Description, HotFixID, OperatingSystem, IPv4Address) };
+    If (($fExportCSV -eq "Y") -or ($fExportCSV -eq "YES")) { Export-CSVData -fFileNameText "$($fFileNameText)" -fCustomerName $fCustomerName -fExportData $($fResult | sort @{Expression = "MachineName"; Descending = $false},  @{Expression = "InstalledOn"; Descending = $true} | Select PSComputerName, InstalledOn, InstalledBy, Description, HotFixID, OperatingSystem, IPv4Address) };
   ## Return
     [hashtable]$Return = @{};
-    $Return.HotFixInstallDates = $fResult | sort MachineName, InstalledOn | Select PSComputerName, InstalledOn, InstalledBy, Description, HotFixID, OperatingSystem, IPv4Address;
+    $Return.HotFixInstallDates = $fResult | sort @{Expression = "MachineName"; Descending = $false},  @{Expression = "InstalledOn"; Descending = $true} | Select PSComputerName, InstalledOn, InstalledBy, Description, HotFixID, OperatingSystem, IPv4Address;
     Return $Return;
 };
 Function Get-HotFixInstallDatesDomain { ### Get-HotFixInstallDates for multiple Domain servers
@@ -760,10 +760,10 @@ Function Get-HotFixInstalledLocal { ### Get-HotFixInstalled on Local Computer/Se
     If (($fExportHTML -eq "Y") -or ($fExportHTML -eq "YES")) { 
       [hashtable]$ExportData = @{}; # Add up to 9 Title- and Content-variables
       $ExportData.SiteTitle = $fTitle;
-      $ExportData.Title1 = "HotFix Installed"; $ExportData.Content1 =  $($fResult | sort MachineName, InstalledOn | Select PSComputerName, InstalledOn, InstalledBy, Description, HotFixID, OperatingSystem, IPv4Address ) | ConvertTo-HTML -Fragment
+      $ExportData.Title1 = "HotFix Installed"; $ExportData.Content1 =  $($fResult | sort @{Expression = "MachineName"; Descending = $false},  @{Expression = "InstalledOn"; Descending = $true} | Select PSComputerName, InstalledOn, InstalledBy, Description, HotFixID, OperatingSystem, IPv4Address ) | ConvertTo-HTML -Fragment
       Export-HTMLData -fFileNameText "$($fFileNameText)" -fCustomerName $fCustomerName -fExportData $ExportData
     };
-    If (($fExportCSV -eq "Y") -or ($fExportCSV -eq "YES")) { Export-CSVData -fFileNameText "$($fFileNameText)" -fCustomerName $fCustomerName -fExportData $($fResult | sort MachineName, InstalledOn | Select PSComputerName, InstalledOn, InstalledBy, Description, HotFixID, OperatingSystem, IPv4Address) };
+    If (($fExportCSV -eq "Y") -or ($fExportCSV -eq "YES")) { Export-CSVData -fFileNameText "$($fFileNameText)" -fCustomerName $fCustomerName -fExportData $($fResult | sort @{Expression = "MachineName"; Descending = $false},  @{Expression = "InstalledOn"; Descending = $true} | Select PSComputerName, InstalledOn, InstalledBy, Description, HotFixID, OperatingSystem, IPv4Address) };
   ## Return
     [hashtable]$Return = @{};
     $Return.HotFixInstalled = $fResult | sort InstalledOn, HotFixID -Descending | Select PSComputerName, InstalledOn, InstalledBy, Description, HotFixID, OperatingSystem, IPv4Address;

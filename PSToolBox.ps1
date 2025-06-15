@@ -213,7 +213,7 @@ Function Show-Menu {
   If ($DomainQueryEnabled -eq $True) {Write-Host "  Press  '6'  for Get Inactive AD Users / last logon more than eg 90 days."};
   If ($DomainQueryEnabled -eq $True) {Write-Host "  Press  '7'  for Get Inactive AD Computers / last active more than eg 90 days."};
   If ($DomainQueryEnabled -eq $True) {Write-Host "  Press  '8'  for Get AD Servers."};
-  Write-Host "  Press  '9'  for Get Password Never Expires for User Accounts.";
+  If ($DomainQueryEnabled -eq $True) {Write-Host "  Press  '9'  for Get Password Never Expires for AD User Accounts."};
   If ($DomainQueryEnabled -eq $True) {Write-Host "  Press '10'  for Get ITM8 AD Users."};
 
   Write-Host "  "
@@ -265,8 +265,8 @@ Function ToolboxMenu {
       "8" { "`n`n  You selected: Get AD Servers`n"
           If ($DomainQueryEnabled -eq $True) {$Result = Get-ADServers; $Result.ADServers | FT -Autosize;} ELSE {$DomainQueryEnabledInfo}
           Pause;};
-      "9" { "`n`n  You selected: Get Password Never Expires for User Accounts`n"
-          If ($DomainQueryEnabled -eq $True) {$Result = Get-UserPasswordNeverExpires; $Result.count; $Result.UserPasswordNeverExpires | FT -Autosize;} ELSE {$DomainQueryEnabledInfo}
+      "9" { "`n`n  You selected: Get Password Never Expires for AD User Accounts`n"
+          If ($DomainQueryEnabled -eq $True) {$Result = Get-ADUserPasswordNeverExpires; $Result.count; $Result.UserPasswordNeverExpires | FT -Autosize;} ELSE {$DomainQueryEnabledInfo}
           Pause;};
       "10" { "`n`n  You selected: Get ITM8 Users`n"
           If ($DomainQueryEnabled -eq $True) {$Result = Get-ITM8Users; $Result.count; $Result.ITM8Users | FT -Autosize;} ELSE {$DomainQueryEnabledInfo}
@@ -586,13 +586,13 @@ Function Get-ADServers {## Get AD Servers
     $Return.ADServers = $fResult | Sort CN | Select CN, LastLogonDate, Enabled, OperatingSystem, CanonicalName;
     Return $Return;
 };
-Function Get-UserPasswordNeverExpires {## Get Password Never Expires for User Accounts
+Function Get-ADUserPasswordNeverExpires {## Get Password Never Expires for AD User Accounts
   Param(
     $fCustomerName = $(Get-CustomerName),
     $fExportHTML = (Get-ExportHTML),
     $fExportCSV = (Get-ExportCSV),
     $fFileNameText = "UserPasswordNeverExpires",
-    $fTitle = "Get Password Never Expires for User Accounts"
+    $fTitle = "Get Password Never Expires for AD User Accounts"
   );
   ## Script
     Show-Title $fTitle;

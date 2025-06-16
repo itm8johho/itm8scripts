@@ -570,20 +570,20 @@ Function Get-ADServers {## Get AD Servers
   );
   ## Script
     Show-Title $fTitle;
-    $fResult = Get-ADComputer -Filter {(operatingsystem -like "*server*") } -Properties CN, LastLogonDate, OperatingSystem, CanonicalName | Sort-Object -Property CN | Select CN, LastLogonDate, Enabled, OperatingSystem, CanonicalName;
+    $fResult = Get-ADComputer -Filter {(operatingsystem -like "*server*") } -Properties CN, LastLogonDate, OperatingSystem, CanonicalName | Sort-Object -Property CN | Select @{n='ComputerName';e={$_.CN}}, LastLogonDate, Enabled, OperatingSystem, CanonicalName;
   ## Output
-    #$fResult | Sort CN | Select CN, LastLogonDate, Enabled, OperatingSystem, CanonicalName;
+    #$fResult | Sort ComputerName | Select ComputerName, LastLogonDate, Enabled, OperatingSystem, CanonicalName;
   ## Exports
     If (($fExportHTML -eq "Y") -or ($fExportHTML -eq "YES")) { 
       [hashtable]$ExportData = @{}; # Add up to 9 Title- and Content-variables
       $ExportData.SiteTitle = $fTitle;
-      $ExportData.Title1 = "AD Servers"; $ExportData.Content1 =  $($fResult | Sort CN | Select CN, LastLogonDate, Enabled, OperatingSystem, CanonicalName ) | ConvertTo-HTML -Fragment
+      $ExportData.Title1 = "AD Servers"; $ExportData.Content1 =  $($fResult | Sort ComputerName | Select ComputerName, LastLogonDate, Enabled, OperatingSystem, CanonicalName ) | ConvertTo-HTML -Fragment
       Export-HTMLData -fFileNameText "$($fFileNameText)" -fCustomerName $fCustomerName -fExportData $ExportData
     };
-    If (($fExportCSV -eq "Y") -or ($fExportCSV -eq "YES")) { Export-CSVData -fFileNameText "$($fFileNameText)" -fCustomerName $fCustomerName -fExportData $($fResult | Sort CN | Select CN, LastLogonDate, Enabled, OperatingSystem, CanonicalName) };
+    If (($fExportCSV -eq "Y") -or ($fExportCSV -eq "YES")) { Export-CSVData -fFileNameText "$($fFileNameText)" -fCustomerName $fCustomerName -fExportData $($fResult | Sort ComputerName | Select ComputerName, LastLogonDate, Enabled, OperatingSystem, CanonicalName) };
   ## Return
     [hashtable]$Return = @{};
-    $Return.ADServers = $fResult | Sort CN | Select CN, LastLogonDate, Enabled, OperatingSystem, CanonicalName;
+    $Return.ADServers = $fResult | Sort ComputerName | Select ComputerName, LastLogonDate, Enabled, OperatingSystem, CanonicalName;
     Return $Return;
 };
 Function Get-ADUserPasswordNeverExpires {## Get Password Never Expires for AD User Accounts

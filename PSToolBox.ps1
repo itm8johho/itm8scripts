@@ -488,20 +488,20 @@ Function Get-ADUsers {## Get AD Users
   );
   ## Script
     Show-Title $fTitle;
-    $fResult = Get-Aduser -Filter * -Properties *  | Sort-Object -Property samaccountname | Select CN, DisplayName, Samaccountname,@{n="LastLogonDate";e={[datetime]::FromFileTime($_.lastLogonTimestamp).ToString("yyyy-MM-dd HH:mm:ss")}}, Enabled, LockedOut, PasswordNeverExpires, @{Name='PwdLastSet';Expression={[DateTime]::FromFileTime($_.PwdLastSet).ToString("yyyy-MM-dd HH:mm:ss")}}, Description;
+    $fResult = Get-Aduser -Filter * -Properties *  | Sort-Object -Property SamAccountName | Select CN, DisplayName, SamAccountName, @{n="LastLogonDate";e={[datetime]::FromFileTime($_.lastLogonTimestamp).ToString("yyyy-MM-dd HH:mm:ss")}}, Enabled, LockedOut, PasswordNeverExpires, @{Name='PwdLastSet';Expression={[DateTime]::FromFileTime($_.PwdLastSet).ToString("yyyy-MM-dd HH:mm:ss")}}, Description;
   ## Output
-    #$fResult | Sort DisplayName | Select CN, DisplayName, Samaccountname, LastLogonDate, Enabled, LockedOut, PasswordNeverExpires, PwdLastSet, Description;
+    #$fResult | Sort DisplayName | Select CN, DisplayName, SamAccountName, LastLogonDate, Enabled, LockedOut, PasswordNeverExpires, PwdLastSet, Description;
   ## Exports
     If (($fExportHTML -eq "Y") -or ($fExportHTML -eq "YES")) { 
       [hashtable]$ExportData = @{}; # Add up to 9 Title- and Content-variables
       $ExportData.SiteTitle = $fTitle;
-      $ExportData.Title1 = "Latest Reboot"; $ExportData.Content1 =  $($fResult | Sort DisplayName | Select CN,DisplayName, Samaccountname, LastLogonDate, Enabled, LockedOut, PasswordNeverExpires, PwdLastSet, Description ) | ConvertTo-HTML -Fragment
+      $ExportData.Title1 = "Latest Reboot"; $ExportData.Content1 =  $($fResult | Sort DisplayName | Select CN,DisplayName, SamAccountName, LastLogonDate, Enabled, LockedOut, PasswordNeverExpires, PwdLastSet, Description ) | ConvertTo-HTML -Fragment
       Export-HTMLData -fFileNameText "$($fFileNameText)" -fCustomerName $fCustomerName -fExportData $ExportData
     };
-    If (($fExportCSV -eq "Y") -or ($fExportCSV -eq "YES")) { Export-CSVData -fFileNameText "$($fFileNameText)" -fCustomerName $fCustomerName -fExportData $($fResult | Sort DisplayName | Select CN,DisplayName, Samaccountname, LastLogonDate, Enabled, LockedOut, PasswordNeverExpires, PwdLastSet, Description) };
+    If (($fExportCSV -eq "Y") -or ($fExportCSV -eq "YES")) { Export-CSVData -fFileNameText "$($fFileNameText)" -fCustomerName $fCustomerName -fExportData $($fResult | Sort DisplayName | Select CN,DisplayName, SamAccountName, LastLogonDate, Enabled, LockedOut, PasswordNeverExpires, PwdLastSet, Description) };
   ## Return
     [hashtable]$Return = @{};
-    $Return.ADUsers = $fResult | Sort DisplayName | Select CN, DisplayName, Samaccountname, LastLogonDate, Enabled, LockedOut, PasswordNeverExpires, PwdLastSet, Description;
+    $Return.ADUsers = $fResult | Sort DisplayName | Select CN, DisplayName, SamAccountName, LastLogonDate, Enabled, LockedOut, PasswordNeverExpires, PwdLastSet, Description;
     Return $Return;
 };
 Function Get-InactiveADUsers {## Get inactive AD Users / Latest Logon more than eg 90 days
@@ -516,20 +516,20 @@ Function Get-InactiveADUsers {## Get inactive AD Users / Latest Logon more than 
   ## Script
     Show-Title $fTitle;
     $fDaysInactiveTimestamp = [DateTime]::Now.AddDays(-$($fDaysInactive));
-    $fResult = Get-Aduser -Filter {(LastLogonTimeStamp -lt $fDaysInactiveTimestamp) -or (LastLogonTimeStamp -notlike "*")} -Properties *  | Sort-Object -Property samaccountname | Select CN,DisplayName,Samaccountname,@{n="LastLogonDate";e={[datetime]::FromFileTime($_.lastLogonTimestamp).ToString("yyyy-MM-dd HH:mm:ss")}},Enabled,LockedOut, PasswordNeverExpires,@{Name='PwdLastSet';Expression={[DateTime]::FromFileTime($_.PwdLastSet).ToString("yyyy-MM-dd HH:mm:ss")}},Description;
+    $fResult = Get-Aduser -Filter {(LastLogonTimeStamp -lt $fDaysInactiveTimestamp) -or (LastLogonTimeStamp -notlike "*")} -Properties *  | Sort-Object -Property SamAccountName | Select CN,DisplayName,SamAccountName,@{n="LastLogonDate";e={[datetime]::FromFileTime($_.lastLogonTimestamp).ToString("yyyy-MM-dd HH:mm:ss")}},Enabled,LockedOut, PasswordNeverExpires,@{Name='PwdLastSet';Expression={[DateTime]::FromFileTime($_.PwdLastSet).ToString("yyyy-MM-dd HH:mm:ss")}},Description;
   ## Output
-    #$fResult | Sort DisplayName | Select CN,DisplayName,Samaccountname,LastLogonDate,Enabled,LockedOut, PasswordNeverExpires,PwdLastSet,Description;
+    #$fResult | Sort DisplayName | Select CN,DisplayName,SamAccountName,LastLogonDate,Enabled,LockedOut, PasswordNeverExpires,PwdLastSet,Description;
   ## Exports
     If (($fExportHTML -eq "Y") -or ($fExportHTML -eq "YES")) { 
       [hashtable]$ExportData = @{}; # Add up to 9 Title- and Content-variables
       $ExportData.SiteTitle = $fTitle;
-      $ExportData.Title1 = "Inactive ADUsers"; $ExportData.Content1 =  $($fResult | Sort DisplayName | Select CN,DisplayName, Samaccountname, LastLogonDate, Enabled, LockedOut, PasswordNeverExpires, PwdLastSet, Description ) | ConvertTo-HTML -Fragment
+      $ExportData.Title1 = "Inactive ADUsers"; $ExportData.Content1 =  $($fResult | Sort DisplayName | Select CN,DisplayName, SamAccountName, LastLogonDate, Enabled, LockedOut, PasswordNeverExpires, PwdLastSet, Description ) | ConvertTo-HTML -Fragment
       Export-HTMLData -fFileNameText "$($fFileNameText)" -fCustomerName $fCustomerName -fExportData $ExportData
     };
-    If (($fExportCSV -eq "Y") -or ($fExportCSV -eq "YES")) { Export-CSVData -fFileNameText "$($fFileNameText)" -fCustomerName $fCustomerName -fExportData $($fResult | Sort DisplayName | Select CN,DisplayName, Samaccountname, LastLogonDate, Enabled, LockedOut, PasswordNeverExpires, PwdLastSet, Description) };
+    If (($fExportCSV -eq "Y") -or ($fExportCSV -eq "YES")) { Export-CSVData -fFileNameText "$($fFileNameText)" -fCustomerName $fCustomerName -fExportData $($fResult | Sort DisplayName | Select CN,DisplayName, SamAccountName, LastLogonDate, Enabled, LockedOut, PasswordNeverExpires, PwdLastSet, Description) };
   ## Return
     [hashtable]$Return = @{};
-    $Return.InactiveADUsers = $fResult | Sort DisplayName | Select CN,DisplayName,Samaccountname,LastLogonDate,Enabled,LockedOut, PasswordNeverExpires,PwdLastSet,Description;
+    $Return.InactiveADUsers = $fResult | Sort DisplayName | Select CN,DisplayName,SamAccountName,LastLogonDate,Enabled,LockedOut, PasswordNeverExpires,PwdLastSet,Description;
     Return $Return;
 };
 Function Get-InactiveADComputers {## Get inactive AD Computers / Latest Logon more than eg 90 days
@@ -597,7 +597,7 @@ Function Get-ADUserPasswordNeverExpires {## Get Password Never Expires for AD Us
   ## Script
     Show-Title $fTitle;
     $fDaysInactiveTimestamp = [DateTime]::Now.AddDays(-$($fDaysInactive));
-    $fResult = Get-ADUser -Filter * -Properties Name, LockedOut, PasswordNeverExpires, pwdlastSet | where { $_.passwordNeverExpires -eq $true } | Sort Name | Select-Object Name, SamAccountName, Enabled, LockedOut, @{n="PwdNeverExpires";e={$_.PasswordNeverExpires}}, @{n="PwdLastSet";e={[datetime]::FromFileTime($_."PwdLastSet").ToString("yyyy-MM-dd HH:mm:ss")}};
+    $fResult = Get-ADUser -Filter * -Properties Name, LockedOut, PasswordNeverExpires, pwdlastSet | where { $_.passwordNeverExpires -eq $true } | Sort Name | Select-Object Name, SamAccountName, LastLogonDate, Enabled, LockedOut, @{n="PwdNeverExpires";e={$_.PasswordNeverExpires}}, @{n="PwdLastSet";e={[datetime]::FromFileTime($_."PwdLastSet").ToString("yyyy-MM-dd HH:mm:ss")}};
   ## Output
     #$fResult;
   ## Exports
@@ -623,20 +623,20 @@ Function Get-ITM8Users {## Get ITM8 AD Users
   );
   ## Script
     Show-Title $fTitle;
-    $fResult = Get-ADUser -Filter * -Properties * | ? { ($_.DistinguishedName -Like "*OU=ITM8*") -or ($_.Description -like "*ITM8*") -or ($_.Samaccountname -like "*ITM8*") -or ($_.DisplayName -like "*ITM8*") -or ($_.DistinguishedName -Like "*OU=Progressive*") -or ($_.Description -like "*Progressive*") -or ($_.Samaccountname -like "*ProAdmin*") -or ($_.DisplayName -like "*ProAdmin*") -or ($_.Samaccountname -like "*PIT-Support*") -or ($_.DisplayName -like "*PIT-Support*") -or ($_.Samaccountname -like "*DTAdmin*") -or ($_.DisplayName -like "*DTAdmin*")} | Sort Enabled, DisplayName | Select DisplayName, Samaccountname, @{n="LastLogonDate";e={[datetime]::FromFileTime($_.lastLogonTimestamp).ToString("yyyy-MM-dd HH:mm:ss")}}, Enabled, LockedOut, PasswordNeverExpires, @{Name='PwdLastSet';Expression={[DateTime]::FromFileTime($_.PwdLastSet).ToString("yyyy-MM-dd HH:mm:ss")}}, Description, DistinguishedName;
+    $fResult = Get-ADUser -Filter * -Properties * | ? { ($_.DistinguishedName -Like "*OU=ITM8*") -or ($_.Description -like "*ITM8*") -or ($_.SamAccountName -like "*ITM8*") -or ($_.DisplayName -like "*ITM8*") -or ($_.DistinguishedName -Like "*OU=Progressive*") -or ($_.Description -like "*Progressive*") -or ($_.SamAccountName -like "*ProAdmin*") -or ($_.DisplayName -like "*ProAdmin*") -or ($_.SamAccountName -like "*PIT-Support*") -or ($_.DisplayName -like "*PIT-Support*") -or ($_.SamAccountName -like "*DTAdmin*") -or ($_.DisplayName -like "*DTAdmin*")} | Sort Enabled, DisplayName | Select DisplayName, SamAccountName, @{n="LastLogonDate";e={[datetime]::FromFileTime($_.lastLogonTimestamp).ToString("yyyy-MM-dd HH:mm:ss")}}, Enabled, LockedOut, PasswordNeverExpires, @{Name='PwdLastSet';Expression={[DateTime]::FromFileTime($_.PwdLastSet).ToString("yyyy-MM-dd HH:mm:ss")}}, Description, DistinguishedName;
   ## Output
-    #$fResult.count; $fResult | Sort Enabled, DisplayName | ft ;# Select CN,DisplayName,Samaccountname,LastLogonDate,Enabled,LockedOut, PasswordNeverExpires,PwdLastSet,Description;
+    #$fResult.count; $fResult | Sort Enabled, DisplayName | ft ;# Select CN,DisplayName,SamAccountName,LastLogonDate,Enabled,LockedOut, PasswordNeverExpires,PwdLastSet,Description;
   ## Exports
     If (($fExportHTML -eq "Y") -or ($fExportHTML -eq "YES")) { 
       [hashtable]$ExportData = @{}; # Add up to 9 Title- and Content-variables
       $ExportData.SiteTitle = $fTitle;
-      $ExportData.Title1 = "ITM8 AD Users"; $ExportData.Content1 =  $($fResult | Sort Enabled, DisplayName | Select DisplayName, Samaccountname, LastLogonDate, Enabled, LockedOut, PasswordNeverExpires, PwdLastSet, Description, DistinguishedName ) | ConvertTo-HTML -Fragment
+      $ExportData.Title1 = "ITM8 AD Users"; $ExportData.Content1 =  $($fResult | Sort Enabled, DisplayName | Select DisplayName, SamAccountName, LastLogonDate, Enabled, LockedOut, PasswordNeverExpires, PwdLastSet, Description, DistinguishedName ) | ConvertTo-HTML -Fragment
       Export-HTMLData -fFileNameText "$($fFileNameText)" -fCustomerName $fCustomerName -fExportData $ExportData
     };
-    If (($fExportCSV -eq "Y") -or ($fExportCSV -eq "YES")) { Export-CSVData -fFileNameText "$($fFileNameText)" -fCustomerName $fCustomerName -fExportData $($fResult | Sort Enabled, DisplayName | Select DisplayName, Samaccountname, LastLogonDate, Enabled, LockedOut, PasswordNeverExpires, PwdLastSet, Description, DistinguishedName) };
+    If (($fExportCSV -eq "Y") -or ($fExportCSV -eq "YES")) { Export-CSVData -fFileNameText "$($fFileNameText)" -fCustomerName $fCustomerName -fExportData $($fResult | Sort Enabled, DisplayName | Select DisplayName, SamAccountName, LastLogonDate, Enabled, LockedOut, PasswordNeverExpires, PwdLastSet, Description, DistinguishedName) };
   ## Return
     [hashtable]$Return = @{};
-    $Return.ITM8Users = $fResult | Sort Enabled, DisplayName | Select DisplayName, Samaccountname, LastLogonDate, Enabled, LockedOut, PasswordNeverExpires, PwdLastSet, Description, DistinguishedName;
+    $Return.ITM8Users = $fResult | Sort Enabled, DisplayName | Select DisplayName, SamAccountName, LastLogonDate, Enabled, LockedOut, PasswordNeverExpires, PwdLastSet, Description, DistinguishedName;
     Return $Return;
 };
 Function Get-HotFixInstallDatesLocal { ### Get-HotFixInstallDates for Local Computer/Server
@@ -1097,7 +1097,7 @@ Function Get-FSLogixErrorsDomain {## Get FSLogix Errors - need an AD Server or S
     };
     $fResult = Foreach ($fErrorCode in $fErrorCodes) {$fLogText | Where-Object { $_ -like "*$($fErrorCode)*" }};
   ## Output
-    #$fResult | Sort DisplayName | Select CN,DisplayName,Samaccountname,LastLogonDate,Enabled,LockedOut, PasswordNeverExpires,PwdLastSet,Description;
+    #$fResult | Sort DisplayName | Select CN,DisplayName,SamAccountName,LastLogonDate,Enabled,LockedOut, PasswordNeverExpires,PwdLastSet,Description;
     #If ($fExportAllErrors -ne $true) { $fResult | sort Servername, Date, Time | FT Servername, Date, Time, Error, tid, LogText; Write-Host "   Number of errorcodes listed: $($fResult.count)`n"; };
     If ($fExportAllErrors -ne $true) { Write-Host "`n  Number of errorcodes listed: $($fResult.count)`n"; } else { Write-Host "`n  Number of errorcodes listed: $($fLogText.count)`n" };
   ## Exports

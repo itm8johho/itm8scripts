@@ -597,7 +597,7 @@ Function Get-ADUserPasswordNeverExpires {## Get Password Never Expires for AD Us
   ## Script
     Show-Title $fTitle;
     $fDaysInactiveTimestamp = [DateTime]::Now.AddDays(-$($fDaysInactive));
-    $fResult = Get-ADUser -Filter * -Properties Name, LockedOut, PasswordNeverExpires, pwdlastSet | where { $_.passwordNeverExpires -eq $true } | Sort Name | Select-Object Name, SamAccountName, LockedOut, @{n="PwdNeverExpires";e={$_.PasswordNeverExpires}}, @{n="PwdLastSet";e={[datetime]::FromFileTime($_."PwdLastSet").ToString("yyyy-MM-dd HH:mm:ss")}}, Enabled;
+    $fResult = Get-ADUser -Filter * -Properties Name, LockedOut, PasswordNeverExpires, pwdlastSet | where { $_.passwordNeverExpires -eq $true } | Sort Name | Select-Object Name, SamAccountName, Enabled, LockedOut, @{n="PwdNeverExpires";e={$_.PasswordNeverExpires}}, @{n="PwdLastSet";e={[datetime]::FromFileTime($_."PwdLastSet").ToString("yyyy-MM-dd HH:mm:ss")}};
   ## Output
     #$fResult;
   ## Exports
